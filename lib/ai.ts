@@ -5,7 +5,7 @@ import { sql } from "./db";
 import { planRoute } from "./mbta";
 
 // Gemini through Mastra's model router. Needs GOOGLE_GENERATIVE_AI_API_KEY.
-const MODEL = process.env.GEMINI_MODEL || "google/gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "google/gemini-3.8-flash";
 export const aiEnabled = () => !!(process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_API_KEY);
 
 const TYPES = ["historic", "restaurant", "cafe", "sports", "career"] as const;
