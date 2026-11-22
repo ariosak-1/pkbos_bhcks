@@ -10,7 +10,7 @@ cp .env.example .env.local   # every key is optional
 npm run dev                  # http://localhost:3000
 ```
 
-With no keys, the app runs end to end: embedded Postgres (PGlite) in `./data`, photos in `./data/uploads`, MBTA public rate limits, and GPS-based catch matching.
+With no keys, the app uses embedded Postgres (PGlite) in `./data`, stores photos in `./data/uploads`, uses MBTA public rate limits, and matches catches by GPS. The map shows subway lines and stops, and a CARTO Basemaps key enables the street background.
 
 ## Keys
 
@@ -18,6 +18,7 @@ With no keys, the app runs end to end: embedded Postgres (PGlite) in `./data`, p
 |---|---|
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini (via Mastra): photo → Pokebos matching, abilities seen in photos, smarter search, Prof. Crimson chat |
 | `MBTA_API_KEY` | Higher MBTA V3 rate limits (live shapes + predictions) |
+| `NEXT_PUBLIC_CARTO_BASEMAP_API_KEY` | CARTO Voyager background tiles on the map. The browser sends this key with tile requests. |
 | `DATABASE_URL` | Real Postgres. Point it at TigerData and `location_pings` becomes a Timescale hypertable |
 | `GOOGLE_PLACES_API_KEY` | `npm run seed:places` bulk import of establishments near T stops |
 | `SOLANA_SECRET_KEY` | Every point award and badge is mirrored to Solana devnet as a memo tx |

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import type { Line } from "@/lib/mbta";
 
 type Stop = { id: string; name: string; lat: number; lng: number; color: string; count: number; caught: number };
+const cartoKey = process.env.NEXT_PUBLIC_CARTO_BASEMAP_API_KEY;
 
 function Fit({ lines }: { lines: Line[] }) {
   const map = useMap();
@@ -17,7 +18,12 @@ function Fit({ lines }: { lines: Line[] }) {
 export default function MapView({ lines, stops, selected, onSelect, me }: { lines: Line[]; stops: Stop[]; selected: string | null; onSelect: (id: string) => void; me: { lat: number; lng: number } | null }) {
   return (
     <MapContainer center={[42.355, -71.07]} zoom={12} style={{ height: "100%", width: "100%" }} zoomControl={false} attributionControl={true}>
-      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png" attribution="&copy; OpenStreetMap &copy; CARTO" />
+      {cartoKey && (
+        <TileLayer
+          url={`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(cartoKey)}`}
+          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+        />
+      )}
       <Fit lines={lines} />
       {lines.map((l) => l.paths.map((p, i) => (
         <Polyline key={`${l.id}-${i}`} positions={p} pathOptions={{ color: "#181818", weight: 9, opacity: 1, lineCap: "square" }} />
