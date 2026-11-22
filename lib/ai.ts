@@ -97,8 +97,12 @@ const searcher = new Agent({
 export async function expandSearch(q: string) {
   if (!aiEnabled()) return null;
   try {
-    const res = await searcher.generate(q, { structuredOutput: { schema: SearchSchema } });
-    return (res as any).object as z.infer<typeof SearchSchema>;
+    // search shouldn't hang on a slow model: give gemini 4s, then fall back to plain keywords
+    const res = await Promise.race([
+      searcher.generate(q, { structuredOutput: { schema: SearchSchema } }),
+      new Promise<null>((ok) => setTimeout(() => ok(null), 4000)),
+    ]);
+    return res ? ((res as any).object as z.infer<typeof SearchSchema>) : null;
   } catch {
     return null;
   }
