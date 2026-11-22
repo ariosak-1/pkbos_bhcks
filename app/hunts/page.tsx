@@ -53,9 +53,9 @@ export default function Hunts() {
     <>
       <div className="spread">
         <h1 style={{ margin: 0 }}>HUNTS</h1>
-        <span className="small muted">{data.completed} done · +{data.earned} pts</span>
+        <Link href="/beat" className="btn">BEAT THE T</Link>
       </div>
-      <p className="small muted" style={{ margin: "4px 0 14px" }}>Ride the T from where you are to a Pokebos across town. Catch it there for the bonus.</p>
+      <p className="small muted" style={{ margin: "4px 0 14px" }}>Ride the T from where you are to a Pokebos across town. Catch it there for the bonus. {data.completed} done, +{data.earned} pts.</p>
       {err && <div className="error" style={{ marginBottom: 10 }}>{err}</div>}
 
       {a ? (

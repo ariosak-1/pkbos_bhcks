@@ -360,3 +360,23 @@ a.mon:hover .spritebox, a.collectible:hover .spritebox, .hunt-card:hover .sprite
 @keyframes splashout { to { opacity: 0; visibility: hidden; } }
 @keyframes spark { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-90vh) translateX(20px); } }
 .choice.on { background: var(--gold); }
+
+/* ---------- beat the t ---------- */
+.beat-clock { display: grid; justify-items: center; gap: 6px; margin: 4px 0 14px; padding: 16px; background: var(--ink); color: var(--gold); border: 3px solid var(--ink); box-shadow: var(--shadow); }
+.beat-clock .px { font-size: 8px; color: var(--cream); }
+.beat-clock b { font-family: var(--px); font-weight: normal; font-size: clamp(36px, 12vw, 56px); letter-spacing: 2px; }
+.beat-clock.hurry b { color: var(--red); animation: blink 0.8s steps(2) infinite; }
+.beat-stops { display: grid; gap: 8px; margin-bottom: 12px; }
+.beat-stop { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--card); border: var(--stroke); box-shadow: var(--shadow-small); }
+.beat-stop .n { font-family: var(--px); font-size: 9px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--gold); border: 2px solid var(--ink); }
+.beat-stop .name { flex: 1; font-family: var(--px); font-size: 9px; line-height: 1.6; }
+.beat-stop > .px { font-size: 8px; }
+.beat-stop.got { background: color-mix(in srgb, var(--acid) 35%, var(--card)); }
+.beat-stop.got .name { text-decoration: line-through; }
+.beat-result { display: flex; flex-direction: column; gap: 4px; }
+.beat-result.won { background: var(--acid); }
+.beat-result .px { font-size: 10px; }
+.route-pin.done .pin-in { background: var(--acid); }
+.beat-cta { display: flex; flex-direction: column; gap: 6px; background: var(--halftone) 0 0 / 6px 6px, color-mix(in srgb, var(--pink) 40%, var(--card)); }
+.beat-cta .px { font-size: 10px; }
+@media (min-width: 1024px) { .home > .beat-cta { grid-column: 1 / -1; } }

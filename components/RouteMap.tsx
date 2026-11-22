@@ -39,14 +39,17 @@ function Rider({ path }: { path: LL[] }) {
   return <CircleMarker ref={ref} center={path[0]} radius={6} pathOptions={{ color: "#25251F", weight: 2.5, fillColor: "#F3C82D", fillOpacity: 1 }} interactive={false} />;
 }
 
-export default function RouteMap({ plan, target, focus }: { plan: any; target?: { name: string; domain?: string | null } | null; focus?: number | null }) {
+type Pin = { name: string; domain?: string | null; lat: number; lng: number; caught?: boolean };
+const pinIcon = (t?: { name: string; domain?: string | null } | null, done = false) => L.divIcon({
+  className: `route-pin ${done ? "done" : ""}`,
+  html: `<div class="pin-in"><b>${(t?.name || "?")[0]}</b>${t?.domain ? `<img src="${spriteSrc(t.domain)}" alt="" onerror="this.remove()" onload="this.naturalWidth<=16&&this.remove()" />` : ""}</div>`,
+  iconSize: [40, 40], iconAnchor: [20, 40],
+});
+
+export default function RouteMap({ plan, target, focus, pins }: { plan: any; target?: { name: string; domain?: string | null } | null; focus?: number | null; pins?: Pin[] }) {
   const all: LL[] = useMemo(() => plan.legs.flatMap((l: any) => l.path || []), [plan]);
   const fitPts: LL[] = useMemo(() => (focus != null && plan.legs[focus]?.path?.length ? plan.legs[focus].path : all), [plan, focus, all]);
-  const pin = useMemo(() => L.divIcon({
-    className: "route-pin",
-    html: `<div class="pin-in"><b>${(target?.name || "?")[0]}</b>${target?.domain ? `<img src="${spriteSrc(target.domain)}" alt="" onerror="this.remove()" onload="this.naturalWidth<=16&&this.remove()" />` : ""}</div>`,
-    iconSize: [40, 40], iconAnchor: [20, 40],
-  }), [target]);
+  const pin = useMemo(() => pinIcon(target), [target]);
   const transfers: LL[] = plan.legs.filter((l: any) => l.kind === "ride").flatMap((l: any) => [l.path[0], l.path[l.path.length - 1]]);
   const dim = (i: number) => (focus == null || focus === i ? 1 : 0.35);
 
@@ -69,7 +72,7 @@ export default function RouteMap({ plan, target, focus }: { plan: any; target?: 
         {transfers.map((p, i) => <CircleMarker key={`t${i}`} center={p} radius={5} pathOptions={{ color: "#25251F", weight: 2.5, fillColor: "#fff", fillOpacity: 1 }} />)}
         <Rider path={all} />
         <CircleMarker center={plan.from} radius={8} pathOptions={{ className: "route-you", color: "#25251F", weight: 3, fillColor: "#2a6bd1", fillOpacity: 1 }} />
-        <Marker position={plan.to} icon={pin} />
+        {pins ? pins.map((p) => <Marker key={p.name} position={[p.lat, p.lng]} icon={pinIcon(p, p.caught)} />) : <Marker position={plan.to} icon={pin} />}
       </MapContainer>
     </div>
   );

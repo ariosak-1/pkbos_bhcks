@@ -143,6 +143,19 @@ export const POST = handle(async (req: Request) => {
     huntsCompleted.push(chosen.name);
   }
 
+  // --- Beat the T: all stops caught before the train ---
+  const [run] = await sql<any>(
+    "SELECT id, title, bonus, pokebos_ids, started_at FROM beat_runs WHERE user_id=$1 AND completed_at IS NULL AND deadline > now() AND $2 = ANY(pokebos_ids) ORDER BY started_at DESC LIMIT 1", [user.id, chosen.id]);
+  if (run) {
+    const [got] = await sql<{ n: number }>("SELECT count(DISTINCT pokebos_id)::int AS n FROM catches WHERE user_id=$1 AND pokebos_id = ANY($2) AND created_at >= $3", [user.id, run.pokebos_ids, run.started_at]);
+    if (got.n >= run.pokebos_ids.length) {
+      await sql("UPDATE beat_runs SET completed_at=now() WHERE id=$1", [run.id]);
+      await award(user.id, run.bonus, "beat", String(run.id));
+      points += run.bonus;
+      huntsCompleted.push(`Beat the T: ${run.title}`);
+    }
+  }
+
   const badges = await syncBadges(user.id);
   return { status: "caught", pokebos: { id: chosen.id, name: chosen.name, types: chosen.types, rarity: chosen.rarity }, level, first, points, newAbilities, huntsCompleted, badges, confidence };
 });

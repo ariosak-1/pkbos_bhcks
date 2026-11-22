@@ -49,6 +49,11 @@ export default function Home() {
         </Link>
       )}
 
+      <Link href="/beat" className="box beat-cta">
+        <span className="px">BEAT THE T</span>
+        <span className="small muted">Waiting on a train? Grab a few Pokebos before it shows up.</span>
+      </Link>
+
       <section className="home-wide">
         <h2>{rec?.hasAffinity ? "FOR YOU" : "FILL YOUR DEX"}</h2>
         <div className="scroller motion-stagger">{rec?.forYou?.map((p: any) => <PokeCard key={p.id} p={p} />)}</div>
