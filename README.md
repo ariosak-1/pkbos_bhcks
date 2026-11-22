@@ -1,6 +1,6 @@
 # Pokebos
 
-Catch Boston on the T. Places are Pokebos, the MBTA is the map, a photo is a Pokeball.
+Catch Boston on the T. Places are Pokebos, the MBTA is the map, a photo is a Pokeball. maybeee we shld make it another thing tho lowk
 
 ## Run it
 
