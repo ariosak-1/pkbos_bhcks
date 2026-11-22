@@ -3,11 +3,12 @@ import { sql, inSeason } from "@/lib/db";
 import { handle, requireUser, award, syncBadges, bostonDate, HttpError } from "@/lib/server";
 import { putPhoto } from "@/lib/storage";
 import { haversine } from "@/lib/mbta";
-import { aiEnabled, identifyPhoto, type Candidate } from "@/lib/ai";
+import { aiEnabled, identifyPhoto, verifyPhoto, type Candidate } from "@/lib/ai";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_AGE_DAYS = 3; // anti-cheat: catches must be fresh photos
 const LEVEL_UP_POINTS = 5;
+const NEAR_M = 400; // how close your location has to be when the AI can't vouch for the photo
 
 export const POST = handle(async (req: Request) => {
   const user = await requireUser();
@@ -39,34 +40,67 @@ export const POST = handle(async (req: Request) => {
 
   const confirmId = form.get("pokebosId")?.toString();
   let chosen: any = null, confidence: number | null = null, abilityIds: number[] = [];
+  let aiWorked = false;
+  const abilitiesFor = async (ids: string[]) => {
+    const abil = await sql<any>("SELECT id, name, hint, pokebos_id FROM abilities WHERE pokebos_id = ANY($1)", [ids]);
+    return (p: any): Candidate => ({ id: p.id, name: p.name, blurb: p.blurb, abilities: abil.filter((a) => a.pokebos_id === p.id) });
+  };
+  const nearYou = (p: any) => lat && lng && haversine(lat, lng, p.lat, p.lng) < NEAR_M;
+
   if (confirmId) {
-    chosen = seasonal.find((p) => p.id === confirmId);
-    if (!chosen) {
+    // trainer picked it (from the dex or the list). someone has to back that up: the AI or your location
+    const pick = seasonal.find((p) => p.id === confirmId);
+    if (!pick) {
       const ev = all.find((p) => p.id === confirmId);
       throw new HttpError(422, ev ? `${ev.name} isn't around on that date.` : "Unknown Pokebos");
     }
-    const claimed = Number(form.get("abilityId"));
-    if (claimed && !aiEnabled()) abilityIds = [claimed]; // with AI on, abilities must be seen in the photo
-  }
-
-  if (!chosen && aiEnabled()) {
-    const abil = await sql<any>("SELECT id, name, hint, pokebos_id FROM abilities WHERE pokebos_id = ANY($1)", [pool.map((p) => p.id)]);
-    const cands: Candidate[] = pool.map((p) => ({ id: p.id, name: p.name, blurb: p.blurb, abilities: abil.filter((a) => a.pokebos_id === p.id) }));
-    try {
-      const r = await identifyPhoto(buf, type, cands);
-      if (r?.pokebosId && r.confidence >= 0.5) {
-        chosen = pool.find((p) => p.id === r.pokebosId);
-        confidence = r.confidence;
-        abilityIds = r.abilityIds;
+    if (aiEnabled()) {
+      try {
+        const v = await verifyPhoto(buf, type, (await abilitiesFor([pick.id]))(pick));
+        aiWorked = true;
+        if (!v.match || v.confidence < 0.5) throw new HttpError(422, `That doesn't look like ${pick.name}. Get a clearer shot of it!`);
+        confidence = v.confidence;
+        abilityIds = v.abilityIds;
+      } catch (e) {
+        if (e instanceof HttpError) throw e;
+        console.warn("[catch] AI verify failed", (e as Error).message);
       }
-    } catch (e) { console.warn("[catch] AI identify failed", (e as Error).message); }
-  } else if (!chosen && ranked.length && ranked[0].dist < 120) {
-    chosen = ranked[0]; // no AI key: trust a very close GPS fix
+    }
+    if (!aiWorked) {
+      if (!nearYou(pick)) throw new HttpError(422, `Can't confirm you're at ${pick.name}. Turn on location, or snap it while you're there.`);
+      const claimed = Number(form.get("abilityId"));
+      if (claimed) abilityIds = [claimed];
+    }
+    chosen = pick;
+  } else {
+    if (aiEnabled()) {
+      const toCand = await abilitiesFor(pool.map((p) => p.id));
+      try {
+        const r = await identifyPhoto(buf, type, pool.map(toCand));
+        aiWorked = true;
+        if (r?.pokebosId && r.confidence >= 0.5) {
+          chosen = pool.find((p) => p.id === r.pokebosId);
+          confidence = r.confidence;
+          abilityIds = r.abilityIds;
+        }
+      } catch (e) { console.warn("[catch] AI identify failed", (e as Error).message); }
+    }
+    if (!chosen && !aiWorked && ranked.length && ranked[0].dist < 120) chosen = ranked[0]; // no AI: trust a very close GPS fix
   }
 
   if (!chosen) {
-    return { status: "choose", candidates: pool.slice(0, 8).map((p) => ({ id: p.id, name: p.name, types: p.types, dist: p.dist ? Math.round(p.dist) : null })) };
+    // only offer a pick list for places you're actually near; a pick still gets verified above
+    const near = ranked.filter((p) => p.dist < NEAR_M).slice(0, 8);
+    if (!near.length) throw new HttpError(422, "Couldn't spot a Pokebos in this photo. Get the sign or storefront in frame, and turn on location.");
+    return { status: "choose", candidates: near.map((p) => ({ id: p.id, name: p.name, types: p.types, dist: Math.round(p.dist) })) };
   }
+
+  // --- Metadata has to agree too ---
+  if (exif?.latitude != null && exif?.longitude != null) {
+    const d = haversine(exif.latitude, exif.longitude, chosen.lat, chosen.lng);
+    if (d > 600) throw new HttpError(422, `This photo was taken ${d < 2000 ? Math.round(d) + "m" : (d / 1000).toFixed(1) + "km"} away from ${chosen.name}.`);
+  }
+  if (!takenAt && !(lat && lng)) throw new HttpError(422, "This photo has no date or location info. Use your camera, or turn on location.");
 
   // --- Same-day rule ---
   const day = bostonDate(when);
@@ -76,7 +110,7 @@ export const POST = handle(async (req: Request) => {
   const key = await putPhoto(buf, type);
   const [photo] = await sql<{ id: number }>(
     "INSERT INTO photos (user_id, pokebos_id, storage_key, content_type, taken_at, lat, lng, ai_confidence, flagged) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
-    [user.id, chosen.id, key, type, takenAt, lat, lng, confidence, !!confirmId && aiEnabled()] // review queue: AI couldn't confirm it. no-metadata photos still show (anti-cheat later)
+    [user.id, chosen.id, key, type, takenAt, lat, lng, confidence, !aiWorked && !takenAt] // no AI + no exif = review later
   );
   await sql("INSERT INTO catches (user_id, pokebos_id, photo_id, caught_on) VALUES ($1,$2,$3,$4)", [user.id, chosen.id, photo.id, day]);
   const level = (await sql<{ n: number }>("SELECT count(*)::int AS n FROM catches WHERE user_id=$1 AND pokebos_id=$2", [user.id, chosen.id]))[0].n;
@@ -98,20 +132,15 @@ export const POST = handle(async (req: Request) => {
     }
   }
 
-  // --- Hunts ---
+  // --- Hunt: you rode out here for this one ---
   const huntsCompleted: string[] = [];
-  const hunts = await sql<any>(
-    `SELECT h.*, uh.started_at FROM user_hunts uh JOIN hunts h ON h.id=uh.hunt_id
-     WHERE uh.user_id=$1 AND uh.completed_at IS NULL AND $2 = ANY(h.pokebos_ids)`, [user.id, chosen.id]);
-  for (const h of hunts) {
-    const got = await sql<{ n: number }>(
-      "SELECT count(DISTINCT pokebos_id)::int AS n FROM catches WHERE user_id=$1 AND pokebos_id = ANY($2) AND created_at >= $3", [user.id, h.pokebos_ids, h.started_at]);
-    if (got[0].n >= h.pokebos_ids.length) {
-      await sql("UPDATE user_hunts SET completed_at=now() WHERE user_id=$1 AND hunt_id=$2", [user.id, h.id]);
-      await award(user.id, h.bonus, "hunt", h.id);
-      points += h.bonus;
-      huntsCompleted.push(h.name);
-    }
+  const [trip] = await sql<any>(
+    "SELECT id, bonus FROM hunt_trips WHERE user_id=$1 AND pokebos_id=$2 AND completed_at IS NULL AND gave_up_at IS NULL", [user.id, chosen.id]);
+  if (trip) {
+    await sql("UPDATE hunt_trips SET completed_at=now() WHERE id=$1", [trip.id]);
+    await award(user.id, trip.bonus, "hunt", String(trip.id));
+    points += trip.bonus;
+    huntsCompleted.push(chosen.name);
   }
 
   const badges = await syncBadges(user.id);

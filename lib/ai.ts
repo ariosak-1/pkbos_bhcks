@@ -44,6 +44,19 @@ export async function identifyPhoto(image: Buffer, mediaType: string, candidates
   return out;
 }
 
+// yes/no check when the trainer picks the place themselves
+const VerifySchema = z.object({ match: z.boolean(), confidence: z.number().min(0).max(1), abilityIds: z.array(z.number()), reason: z.string() });
+export async function verifyPhoto(image: Buffer, mediaType: string, c: Candidate) {
+  const res = await identifier.generate(
+    [{ role: "user", content: [
+      { type: "text", text: `Was this photo taken at or of "${c.name}" (${c.blurb ?? ""})? A generic skyline, street, screenshot or unrelated place is NOT a match. Abilities: ${c.abilities.map((a) => `[${a.id}] ${a.name} (${a.hint})`).join("; ")}` },
+      { type: "image", image: image.toString("base64"), mediaType },
+    ] }] as any,
+    { structuredOutput: { schema: VerifySchema } }
+  );
+  return (res as any).object as z.infer<typeof VerifySchema>;
+}
+
 // ---------- Abilities from web/review text ----------
 const abilitySmith = new Agent({
   id: "ability-smith",

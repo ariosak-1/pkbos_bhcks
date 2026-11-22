@@ -3,7 +3,8 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { api, useApi, dexNo, fmtDate, getPosition } from "@/lib/client";
 import { Sprite, Types, Stars } from "@/components/Sprite";
-import { RouteLegs } from "@/components/RouteLegs";
+import { TripView } from "@/components/RouteLegs";
+import { useRouter } from "next/navigation";
 import { LINES } from "@/lib/mbta-snapshot";
 
 export default function DexEntry({ params }: { params: Promise<{ id: string }> }) {
@@ -12,6 +13,14 @@ export default function DexEntry({ params }: { params: Promise<{ id: string }> }
   const [sheet, setSheet] = useState(false);
   const [plan, setPlan] = useState<any>(null);
   const [routeErr, setRouteErr] = useState("");
+  const router = useRouter();
+
+  async function hunt() {
+    setRouteErr("");
+    const pos = await getPosition();
+    if (!pos) return setRouteErr("Turn on location to start a hunt.");
+    api("/api/hunts", { method: "POST", json: { to: id, ...pos } }).then(() => router.push("/hunts"), (e) => setRouteErr(e.message));
+  }
 
   async function route() {
     setRouteErr("");
@@ -50,9 +59,10 @@ export default function DexEntry({ params }: { params: Promise<{ id: string }> }
         <div className="row" style={{ marginTop: 12 }}>
           <Link href={`/catch?id=${p.id}`} className="btn primary">CATCH</Link>
           <button className="btn go" onClick={route}>T ROUTE</button>
+          <button className="btn" onClick={hunt}>HUNT IT</button>
         </div>
         {routeErr && <div className="error" style={{ marginTop: 8 }}>{routeErr}</div>}
-        {plan && <div style={{ marginTop: 12 }}><RouteLegs plan={plan} /></div>}
+        {plan && <div style={{ marginTop: 12 }}><TripView plan={plan} target={p} /></div>}
       </div>
 
       <h2>ABILITIES</h2>
