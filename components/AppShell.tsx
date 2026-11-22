@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { Logo } from "./Crimson";
 import { Tutorial } from "./Tutorial";
+import { Splash } from "./Splash";
 
 type Me = { user: any; stats: any; badges: any[]; redemptions: any[]; features: { ai: boolean; solana: boolean; postgres: boolean } };
 const MeCtx = createContext<{ me: Me | null; reload: () => void; replayTutorial: () => void }>({ me: null, reload: () => {}, replayTutorial: () => {} });
@@ -27,6 +28,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [alert, setAlert] = useState<{ id: string; name: string; dist: number } | null>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const sessionRequest = useRef(0);
+  // intro animation once per browser session
+  const [splash, setSplash] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("pkb-splash") || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      sessionStorage.setItem("pkb-splash", "1");
+    } catch { /* storage blocked: still fine to show it */ }
+    setSplash(true);
+  }, []);
+  const intro = splash && <Splash onDone={() => setSplash(false)} />;
   const reload = async (forPath = path) => {
     const request = ++sessionRequest.current;
     setSessionError(false);
@@ -62,7 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => navigator.geolocation.clearWatch(id);
   }, [me?.user?.tracking]);
 
-  if (path === "/start") return <MeCtx.Provider value={{ me, reload: () => reload(), replayTutorial: () => {} }}>{children}</MeCtx.Provider>;
+  if (path === "/start") return <MeCtx.Provider value={{ me, reload: () => reload(), replayTutorial: () => {} }}>{children}{intro}</MeCtx.Provider>;
   if (sessionError) return (
     <div className="intro title">
       <Logo size={64} />
@@ -70,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <button className="btn primary" onClick={() => reload()}>RETRY</button>
     </div>
   );
-  if (!me?.user) return <div className="intro title"><Logo size={64} /></div>;
+  if (!me?.user) return intro || <Splash intro={false} />;
 
   return (
     <MeCtx.Provider value={{ me, reload: () => reload(), replayTutorial: () => { router.push("/"); setTut(true); } }}>
@@ -109,6 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           setTut(false);
         }} />
       )}
+      {intro}
     </MeCtx.Provider>
   );
 }

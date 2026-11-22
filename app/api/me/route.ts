@@ -23,5 +23,6 @@ export const PATCH = handle(async (req: Request) => {
   const body = await req.json();
   if (typeof body.tutorialDone === "boolean") await sql("UPDATE users SET tutorial_done=$1 WHERE id=$2", [body.tutorialDone, u.id]);
   if (typeof body.tracking === "boolean") await sql("UPDATE users SET tracking=$1 WHERE id=$2", [body.tracking, u.id]);
+  if (typeof body.crimsonShe === "boolean") await sql("UPDATE users SET crimson_she=$1 WHERE id=$2", [body.crimsonShe, u.id]);
   return { ok: true };
 });

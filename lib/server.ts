@@ -4,7 +4,7 @@ import { sql } from "./db";
 import { BADGES, type BadgeStats } from "./seed-data";
 import { recordOnChain } from "./solana";
 
-export type User = { id: number; name: string; trainer_type: string; college: string | null; tutorial_done: boolean; tracking: boolean; solana_address: string | null };
+export type User = { id: number; name: string; trainer_type: string; college: string | null; tutorial_done: boolean; tracking: boolean; solana_address: string | null; crimson_she: boolean };
 
 export function hashPass(pw: string) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -25,7 +25,7 @@ export async function currentUser(): Promise<User | null> {
   const token = (await cookies()).get("pkb")?.value;
   if (!token) return null;
   const rows = await sql<User>(
-    "SELECT u.id, u.name, u.trainer_type, u.college, u.tutorial_done, u.tracking, u.solana_address FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = $1",
+    "SELECT u.id, u.name, u.trainer_type, u.college, u.tutorial_done, u.tracking, u.solana_address, u.crimson_she FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = $1",
     [token]
   );
   return rows[0] ?? null;
