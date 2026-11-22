@@ -1,12 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, getPosition } from "@/lib/client";
+import { api, getPosition, miles } from "@/lib/client";
 import { useMe } from "@/components/AppShell";
 import { Sprite, Types, Stars } from "@/components/Sprite";
 import { TripView, TripStrip } from "@/components/RouteLegs";
 
-const km = (m: number) => (m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`);
 
 export default function Hunts() {
   const { reload } = useMe();
@@ -93,7 +92,7 @@ export default function Hunts() {
                   <Sprite domain={o.target.domain} name={o.target.name} caught={o.target.caught} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="name">{o.target.name}</div>
-                    <div className="small muted">{km(o.target.dist)} · <Stars rarity={o.target.rarity} /></div>
+                    <div className="small muted">{miles(o.target.dist)} · <Stars rarity={o.target.rarity} /></div>
                   </div>
                   <span className="bonus">+{o.bonus}</span>
                 </div>

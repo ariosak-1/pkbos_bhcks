@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { api } from "@/lib/client";
+import { api, miles } from "@/lib/client";
 import { Logo } from "./Crimson";
 import { Tutorial } from "./Tutorial";
 import { Splash } from "./Splash";
@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       {alert && (
         <div className="toast dialog" onClick={() => { router.push(`/dex/${alert.id}`); setAlert(null); }}>
-          A wild {alert.name.toUpperCase()} is {alert.dist}m away!
+          A wild {alert.name.toUpperCase()} is {miles(alert.dist)} away!
           <span className="next">▼</span>
         </div>
       )}

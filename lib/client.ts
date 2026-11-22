@@ -39,5 +39,10 @@ export const TYPE_COLORS: Record<string, string> = {
   historic: "#a51c30", restaurant: "#e07b39", cafe: "#7a5230", sports: "#2a6bd1", career: "#3a8f5c",
 };
 export const RARITY_STARS: Record<string, string> = { common: "★", uncommon: "★★", rare: "★★★", legendary: "★★★★" };
+// meters -> "350 ft" / "0.4 mi"
+export const miles = (m: number) => {
+  const mi = m / 1609.34;
+  return mi < 0.1 ? `${Math.max(50, Math.round((m * 3.281) / 50) * 50)} ft` : `${mi < 10 ? mi.toFixed(1) : Math.round(mi)} mi`;
+};
 export const dexNo = (n: number) => `#${String(n).padStart(3, "0")}`;
 export const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });

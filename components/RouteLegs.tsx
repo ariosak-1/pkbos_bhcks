@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { LINES } from "@/lib/mbta-snapshot";
 import { Sprite } from "./Sprite";
+import { miles } from "@/lib/client";
 
 const RouteMap = dynamic(() => import("./RouteMap"), { ssr: false, loading: () => <div className="routemap skeleton" /> });
 
@@ -53,7 +54,7 @@ export function TripStrip({ plan, target, focus, onFocus, steps = true }: { plan
             <Tag key={l.i} type={onFocus ? "button" : undefined} className={`step ${focus === l.i ? "on" : ""}`} onClick={onFocus ? () => pick(l.i) : undefined}>
               <span className="tag" style={{ background: l.kind === "walk" ? "#6b6658" : LINES[l.route]?.color }}>{l.kind === "walk" ? "WALK" : short(l.route)}</span>
               <span className="what">
-                {l.kind === "walk" ? <>Walk to {l.to}<small>{l.meters}m</small></> : (
+                {l.kind === "walk" ? <>Walk to {l.to}<small>{miles(l.meters)}</small></> : (
                   <>{l.from} → {l.to}<small>toward {l.toward} · {l.stops} stop{l.stops > 1 ? "s" : ""}{l.nextDepartures?.length ? ` · next ${l.nextDepartures.slice(0, 2).map(fmt).join(", ")}` : ""}</small></>
                 )}
               </span>

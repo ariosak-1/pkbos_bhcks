@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { use, useState } from "react";
-import { api, useApi, dexNo, fmtDate, getPosition } from "@/lib/client";
+import { api, useApi, dexNo, fmtDate, getPosition, miles } from "@/lib/client";
 import { Sprite, Types, Stars } from "@/components/Sprite";
 import { TripView } from "@/components/RouteLegs";
 import { useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export default function DexEntry({ params }: { params: Promise<{ id: string }> }
         <p style={{ margin: "12px 0 0" }}>{p.blurb}</p>
         {p.is_event && <p className="px" style={{ fontSize: 9, color: p.inSeason ? "var(--green)" : "var(--muted)", lineHeight: 1.8 }}>{p.inSeason ? "APPEARING NOW" : `ONLY APPEARS ${p.season_from} → ${p.season_to}`}</p>}
         <div className="small muted" style={{ marginTop: 8 }}>
-          Nearest T: {p.stops.map((s: any) => `${s.name} (${s.routes.map((r: string) => LINES[r].group).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join("/")}, ${Math.round(s.dist)}m)`).join(" · ")}
+          Nearest T: {p.stops.map((s: any) => `${s.name} (${s.routes.map((r: string) => LINES[r].group).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join("/")}, ${miles(s.dist)})`).join(" · ")}
         </div>
         <div className="row" style={{ marginTop: 12 }}>
           <Link href={`/catch?id=${p.id}`} className="btn primary">CATCH</Link>
