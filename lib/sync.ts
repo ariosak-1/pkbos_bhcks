@@ -203,7 +203,8 @@ export async function syncAll(force = false) {
   running = (async () => {
     const events = await syncEvents();
     const places = await syncPlaces();
-    await sql("INSERT INTO meta (key, value) VALUES ('last_sync', $1) ON CONFLICT (key) DO UPDATE SET value=$1", [new Date().toISOString()]);
+    // only mark it done if osm actually answered, otherwise try again next boot / next cron
+    if (places.failedBatches < 3) await sql("INSERT INTO meta (key, value) VALUES ('last_sync', $1) ON CONFLICT (key) DO UPDATE SET value=$1", [new Date().toISOString()]);
     console.log("[sync]", { places, events });
     return { places, events };
   })().finally(() => { running = null; });
