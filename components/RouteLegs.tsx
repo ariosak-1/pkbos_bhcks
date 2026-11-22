@@ -15,11 +15,11 @@ const short = (r: string) => r.replace("Green-", "GL ").toUpperCase();
 type Target = { name: string; domain?: string | null } | null | undefined;
 
 // map + strip. tap a step to zoom the map to it
-export function TripView({ plan, target, map = true }: { plan: any; target?: Target; map?: boolean }) {
+export function TripView({ plan, target, map = true, pins }: { plan: any; target?: Target; map?: boolean; pins?: any[] }) {
   const [focus, setFocus] = useState<number | null>(null);
   return (
     <div className="trip">
-      {map && <RouteMap plan={plan} target={target} focus={focus} />}
+      {map && <RouteMap plan={plan} target={target} focus={focus} pins={pins} />}
       <TripStrip plan={plan} target={target} focus={focus} onFocus={map ? setFocus : undefined} />
     </div>
   );

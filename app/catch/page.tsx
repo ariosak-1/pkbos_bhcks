@@ -85,7 +85,7 @@ function Catch() {
             {res.first ? `Gotcha! ${res.pokebos.name.toUpperCase()} was caught!` : `${res.pokebos.name.toUpperCase()} grew to Lv ${res.level}!`}
             <br />+{res.points} PTS
             {res.newAbilities.map((a) => <div key={a}>Unlocked ability {a.toUpperCase()}!</div>)}
-            {res.huntsCompleted.map((h) => <div key={h}>Hunt complete: {h.toUpperCase()}!</div>)}
+            {res.huntsCompleted.map((h) => <div key={h}>{h.startsWith("Beat the T") ? `${h.toUpperCase()}! You beat the train!` : `Hunt complete: ${h.toUpperCase()}!`}</div>)}
             {res.badges.map((b) => <div key={b}>You earned the {b.toUpperCase()} badge!</div>)}
           </div>
           <div className="row">

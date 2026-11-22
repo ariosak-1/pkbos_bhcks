@@ -104,6 +104,23 @@ export async function expandSearch(q: string) {
   }
 }
 
+// ---------- Beat the T: name the run ----------
+const MissionSchema = z.object({ title: z.string(), brief: z.string() });
+const missionWriter = new Agent({
+  id: "beat-the-t",
+  name: "Beat the T",
+  instructions: `You name short timed walking missions in Pokebos (Boston places = Pokebos). Title: max 4 words, punchy, retro game style.
+Brief: one sentence from Professor Crimson hyping the run, mention the time limit, no emojis.`,
+  model: MODEL,
+});
+export async function nameMission(mins: number, stops: string[], words: string) {
+  if (!aiEnabled()) return null;
+  try {
+    const res = await missionWriter.generate(`Time: ${mins} minutes. Stops in order: ${stops.join(", ")}. Trainer asked for: ${words || "anything"}.`, { structuredOutput: { schema: MissionSchema } });
+    return (res as any).object as z.infer<typeof MissionSchema>;
+  } catch { return null; }
+}
+
 // ---------- Professor Crimson (chat with tools) ----------
 const searchTool = createTool({
   id: "search-pokebos",
