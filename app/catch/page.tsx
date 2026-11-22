@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useRef, useState } from "react";
-import { api, getPosition, useApi } from "@/lib/client";
+import { api, getPosition, useApi, miles } from "@/lib/client";
 import { useMe } from "@/components/AppShell";
 import { Sprite, Types } from "@/components/Sprite";
 
@@ -101,7 +101,7 @@ function Catch() {
           {res.candidates.map((c) => (
             <button key={c.id} className="mon" style={{ width: "100%", textAlign: "left" }} onClick={() => file && throwBall(file, c.id)}>
               <div style={{ flex: 1 }}><div className="name">{c.name}</div><Types types={c.types} /></div>
-              {c.dist != null && <span className="small muted">{c.dist}m</span>}
+              {c.dist != null && <span className="small muted">{miles(c.dist)}</span>}
             </button>
           ))}
           <button className="btn" style={{ marginTop: 10 }} onClick={reset}>CANCEL</button>

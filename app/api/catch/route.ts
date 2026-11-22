@@ -98,7 +98,7 @@ export const POST = handle(async (req: Request) => {
   // --- Metadata has to agree too ---
   if (exif?.latitude != null && exif?.longitude != null) {
     const d = haversine(exif.latitude, exif.longitude, chosen.lat, chosen.lng);
-    if (d > 600) throw new HttpError(422, `This photo was taken ${d < 2000 ? Math.round(d) + "m" : (d / 1000).toFixed(1) + "km"} away from ${chosen.name}.`);
+    if (d > 600) throw new HttpError(422, `This photo was taken ${(d / 1609.34).toFixed(1)} mi away from ${chosen.name}.`);
   }
   if (!takenAt && !(lat && lng)) throw new HttpError(422, "This photo has no date or location info. Use your camera, or turn on location.");
 
