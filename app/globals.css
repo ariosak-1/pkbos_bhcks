@@ -340,3 +340,23 @@ a.mon:hover .spritebox, a.collectible:hover .spritebox, .hunt-card:hover .sprite
 @keyframes grow { from { transform: scaleX(0); } }
 @keyframes hop { 40% { transform: translateY(-4px) rotate(-6deg); } 70% { transform: translateY(0) rotate(3deg); } }
 @keyframes heartpop { 0% { opacity: 0; transform: scale(0.4); } 30% { opacity: 1; transform: scale(1.15); } 60% { transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+
+/* ---------- splash ---------- */
+.splash { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; align-content: center; gap: 22px; overflow: hidden; background: var(--halftone) 0 0 / 5px 5px, radial-gradient(ellipse at 50% 35%, var(--purple), var(--ink)); }
+.splash.intro-run { animation: splashout 450ms ease-in 2150ms forwards; cursor: pointer; }
+.splash-ball svg { display: block; width: min(42vmin, 200px); height: auto; filter: drop-shadow(0 14px 0 rgb(0 0 0 / 25%)); }
+.intro-run .splash-ball { animation: rollin 1000ms cubic-bezier(0.25, 0.9, 0.3, 1.05) backwards; }
+.idle .splash-ball { animation: rock 1.4s ease-in-out infinite; }
+.splash-word { font-family: var(--px); font-size: clamp(18px, 6vw, 28px); color: var(--red); text-shadow: 2px 3px var(--ink); letter-spacing: 2px; }
+.intro-run .splash-word { animation: rise 400ms var(--ease) 700ms backwards; }
+.splash-train { position: absolute; left: 50%; top: 50%; translate: -50% -50%; opacity: 0; animation: rushin 1000ms cubic-bezier(0.6, 0, 0.9, 0.6) 1150ms forwards; }
+.splash-train svg { display: block; }
+.sparks i { position: absolute; bottom: -10px; left: calc(var(--i) * 7% + 2%); width: 6px; height: 6px; background: var(--gold); opacity: 0; animation: spark 2.2s linear calc(var(--i) * 150ms) infinite; }
+.sparks i:nth-child(3n) { background: var(--pink); width: 4px; height: 4px; }
+.sparks i:nth-child(4n) { background: var(--cream); }
+@keyframes rollin { from { transform: translateX(-75vw) rotate(-720deg); } 80% { transform: translateX(3vw) rotate(20deg); } to { transform: none; } }
+@keyframes rock { 50% { transform: translateX(10px) rotate(25deg); } 0%, 100% { transform: translateX(-10px) rotate(-25deg); } }
+@keyframes rushin { 0% { opacity: 0; transform: scale(0.05); } 15% { opacity: 1; } 100% { opacity: 1; transform: scale(14); } }
+@keyframes splashout { to { opacity: 0; visibility: hidden; } }
+@keyframes spark { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-90vh) translateX(20px); } }
+.choice.on { background: var(--gold); }

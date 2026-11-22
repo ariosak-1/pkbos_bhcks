@@ -7,14 +7,14 @@ import { Typewriter } from "@/components/Typewriter";
 import { COLLEGES } from "@/lib/seed-data";
 import { useMe } from "@/components/AppShell";
 
-type Phase = "title" | "login" | "talk" | "name" | "kind" | "college" | "password" | "outro";
+type Phase = "title" | "login" | "talk" | "name" | "kind" | "college" | "prof" | "password" | "outro";
 
 const INTRO = [
   "Hi there! Welcome to the world of POKEBOS!",
   "I'm CRIMSON. Folks around the Square call me the Pokebos Professor.",
   "This city is full of creatures called POKEBOS: cafes, stadiums, museums, legendary events...",
   "Trainers ride the T, find them, and catch them with a single photo.",
-  "Me? I study them. And I never take off this sweatshirt.",
+  "Me? I study them. And I always dress for the occasion.",
 ];
 
 export default function Start() {
@@ -23,7 +23,7 @@ export default function Start() {
   const [phase, setPhase] = useState<Phase>("title");
   const [line, setLine] = useState(0);
   const [typed, setTyped] = useState(false);
-  const [form, setForm] = useState({ name: "", trainerType: "", college: "", password: "" });
+  const [form, setForm] = useState({ name: "", trainerType: "", college: "", password: "", crimsonShe: false });
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -97,7 +97,7 @@ export default function Start() {
 
   return (
     <div className="intro">
-      <div className="stage"><Crimson size={150} talking={!typed} /></div>
+      <div className="stage"><Crimson size={150} talking={!typed} look={{ type: form.trainerType, college: form.college, she: form.crimsonShe }} /></div>
       {phase === "talk" && say(INTRO[line], advance)}
 
       {phase === "name" && (
@@ -122,7 +122,7 @@ export default function Start() {
         <div className="grid">
           {say(`${form.name}! And what brings you to Boston?`)}
           {[["college", "STUDENT"], ["resident", "RESIDENT"], ["tourist", "TOURIST"]].map(([k, label]) => (
-            <button key={k} className="choice" onClick={() => { setForm({ ...form, trainerType: k }); setPhase(k === "college" ? "college" : "password"); setTyped(false); }}>{label}</button>
+            <button key={k} className="choice" onMouseEnter={() => setForm({ ...form, trainerType: k })} onFocus={() => setForm({ ...form, trainerType: k })} onClick={() => { setForm({ ...form, trainerType: k }); setPhase(k === "college" ? "college" : "prof"); setTyped(false); }}>{label}</button>
           ))}
         </div>
       )}
@@ -131,8 +131,18 @@ export default function Start() {
         <div className="grid">
           {say("Which school? Choose wisely. There is a leaderboard.")}
           <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))" }}>
-            {COLLEGES.map((c) => <button key={c} className="choice" onClick={() => { setForm({ ...form, college: c }); setPhase("password"); setTyped(false); }}>{c.toUpperCase()}</button>)}
+            {COLLEGES.map((c) => <button key={c} className="choice" onMouseEnter={() => setForm({ ...form, college: c })} onFocus={() => setForm({ ...form, college: c })} onClick={() => { setForm({ ...form, college: c }); setPhase("prof"); setTyped(false); }}>{c.toUpperCase()}</button>)}
           </div>
+        </div>
+      )}
+
+      {phase === "prof" && (
+        <div className="grid">
+          {say(form.trainerType === "tourist" ? "Look at me, all dressed up for sightseeing! One more thing: who's guiding you?" : "Ha! New outfit, just for you. One more thing: who's guiding you?")}
+          {[[false, "PROFESSOR CRIMSON (HE)"], [true, "PROFESSOR CRIMSON (SHE)"]].map(([she, label]) => (
+            <button key={String(she)} className={`choice ${form.crimsonShe === she ? "on" : ""}`} onMouseEnter={() => setForm({ ...form, crimsonShe: she as boolean })} onFocus={() => setForm({ ...form, crimsonShe: she as boolean })}
+              onClick={() => { setForm({ ...form, crimsonShe: she as boolean }); setPhase("password"); setTyped(false); }}>{label as string}</button>
+          ))}
         </div>
       )}
 
