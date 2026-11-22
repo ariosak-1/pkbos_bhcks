@@ -102,7 +102,11 @@ async function connect(): Promise<Q> {
 
 async function seed(q: Q) {
   const { rows } = await q.query<{ n: number }>("SELECT count(*)::int AS n FROM pokebos WHERE source IN ('curated','event')");
-  if (rows[0].n >= SEED.length) return;
+  if (rows[0].n >= SEED.length) {
+    // keep logos in sync when we fix a domain in seed-data
+    for (const p of SEED) await q.query("UPDATE pokebos SET domain=$2 WHERE id=$1 AND domain IS DISTINCT FROM $2", [p.id, p.domain ?? null]);
+    return;
+  }
   let dex = 1;
   for (const p of SEED) {
     await q.query(
