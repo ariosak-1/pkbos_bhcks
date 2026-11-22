@@ -55,7 +55,7 @@ export default function MapPage() {
       <div className="mapwrap">
         <MapView lines={shown} stops={stops} selected={sel} onSelect={setSel} me={me} />
         {stop && (
-          <aside className="sidepanel">
+          <aside className="sidepanel motion-slide">
             <button className="btn close" onClick={() => setSel(null)} aria-label="Close">✕</button>
             <h1 style={{ paddingRight: 44, lineHeight: 1.5 }}>{stop.name.toUpperCase()}</h1>
             <div className="row" style={{ gap: 4, marginBottom: 10 }}>

@@ -11,27 +11,39 @@ const MeCtx = createContext<{ me: Me | null; reload: () => void; replayTutorial:
 export const useMe = () => useContext(MeCtx);
 
 const NAV = [
-  { href: "/", label: "HOME", glyph: "⌂", tut: "home" },
-  { href: "/map", label: "MAP", glyph: "▦", tut: "map" },
-  { href: "/catch", label: "CATCH", glyph: "", tut: "catch" },
-  { href: "/dex", label: "DEX", glyph: "▤", tut: "dex" },
-  { href: "/feed", label: "FEED", glyph: "♥", tut: "feed" },
+  { href: "/", label: "HOME", tut: "home" },
+  { href: "/map", label: "MAP", tut: "map" },
+  { href: "/catch", label: "CATCH", tut: "catch" },
+  { href: "/dex", label: "DEX", tut: "dex" },
+  { href: "/feed", label: "FEED", tut: "feed" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
+  const [sessionError, setSessionError] = useState(false);
   const [tut, setTut] = useState(false);
   const [alert, setAlert] = useState<{ id: string; name: string; dist: number } | null>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
-  const reload = (forPath = path) =>
-    api<Me>("/api/me").then(setMe, () => setMe({ user: null } as Me)).finally(() => setLoadedFor(forPath));
+  const sessionRequest = useRef(0);
+  const reload = async (forPath = path) => {
+    const request = ++sessionRequest.current;
+    setSessionError(false);
+    setLoadedFor(null);
+    try {
+      const result = await api<Me>("/api/me", { cache: "no-store" });
+      if (request !== sessionRequest.current) return;
+      setMe(result);
+      setLoadedFor(forPath);
+    } catch {
+      if (request === sessionRequest.current) setSessionError(true);
+    }
+  };
   useEffect(() => { reload(path); }, [path]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!me || loadedFor !== path) return;
     if (!me.user && path !== "/start") router.replace("/start");
-    if (me.user && path === "/start" && !document.querySelector(".intro:not(.title)")) router.replace("/");
     if (me.user && !me.user.tutorial_done && path === "/") setTut(true);
   }, [me, path, loadedFor, router]);
 
@@ -51,6 +63,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [me?.user?.tracking]);
 
   if (path === "/start") return <MeCtx.Provider value={{ me, reload: () => reload(), replayTutorial: () => {} }}>{children}</MeCtx.Provider>;
+  if (sessionError) return (
+    <div className="intro title">
+      <Logo size={64} />
+      <p role="alert">Couldn’t check your session.</p>
+      <button className="btn primary" onClick={() => reload()}>RETRY</button>
+    </div>
+  );
   if (!me?.user) return <div className="intro title"><Logo size={64} /></div>;
 
   return (
@@ -63,13 +82,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/trainer" className="icon" data-tut="trainer" aria-label="Trainer">☺</Link>
         </header>
         <main>{children}</main>
-        <nav className="bottombar">
-          {NAV.map((n) => (
-            <Link key={n.href} href={n.href} data-tut={n.tut} className={`${path === n.href || (n.href !== "/" && path.startsWith(n.href)) ? "on" : ""} ${n.href === "/catch" ? "catch-btn" : ""}`}>
-              {n.href === "/catch" ? <Logo size={52} /> : <span className="glyph">{n.glyph}</span>}
-              {n.label}
-            </Link>
-          ))}
+        <nav className="bottombar" aria-label="Game navigation">
+          {NAV.map((n) => {
+            const current = path === n.href || (n.href !== "/" && path.startsWith(n.href));
+            return (
+              <Link key={n.href} href={n.href} data-tut={n.tut} aria-current={current ? "page" : undefined} className={`${current ? "on" : ""} ${n.tut === "catch" ? "catch-btn" : ""}`}>
+                <span aria-hidden="true" className={n.tut === "catch" ? "nav-ball" : `nav-pixel ${n.tut}`}>
+                  {n.tut === "catch" && <Logo size={25} />}
+                </span>
+                {n.label}
+              </Link>
+            );
+          })}
         </nav>
       </div>
       {alert && (
@@ -78,7 +102,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="next">▼</span>
         </div>
       )}
-      {tut && <Tutorial onDone={() => { setTut(false); api("/api/me", { method: "PATCH", json: { tutorialDone: true } }); }} name={me.user.name} />}
+      {tut && (
+        <Tutorial name={me.user.name} onDone={async () => {
+          await api("/api/me", { method: "PATCH", json: { tutorialDone: true } });
+          setMe((current) => current?.user ? { ...current, user: { ...current.user, tutorial_done: true } } : current);
+          setTut(false);
+        }} />
+      )}
     </MeCtx.Provider>
   );
 }

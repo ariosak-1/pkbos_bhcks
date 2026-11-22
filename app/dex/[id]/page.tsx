@@ -26,9 +26,9 @@ export default function DexEntry({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div style={{ paddingBottom: 60 }}>
-      <div className="box">
+      <div className="box collectible" data-caught={caught} data-rarity={p.rarity}>
         <div className="row" style={{ alignItems: "flex-start", gap: 16 }}>
-          <div style={{ background: "linear-gradient(160deg,#eef6e4,#dfeccf)", padding: 14, borderRadius: 18 }}>
+          <div className="collectible-art detail-art motion-reveal">
             <Sprite domain={p.domain} name={p.name} caught={caught} size={96} />
           </div>
           <div style={{ flex: 1, minWidth: 160 }}>

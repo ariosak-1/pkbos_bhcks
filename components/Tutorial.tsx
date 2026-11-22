@@ -16,11 +16,13 @@ const steps = (name: string) => [
   { sel: null, text: "That's all! Your Boston adventure starts now!" },
 ];
 
-export function Tutorial({ onDone, name }: { onDone: () => void; name: string }) {
+export function Tutorial({ onDone, name }: { onDone: () => Promise<void>; name: string }) {
   const all = steps(name);
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [typed, setTyped] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const step = all[i];
 
   useLayoutEffect(() => {
@@ -34,7 +36,20 @@ export function Tutorial({ onDone, name }: { onDone: () => void; name: string })
     return () => window.removeEventListener("resize", onResize);
   }, [step.sel]);
 
-  const next = () => { if (!typed) return setTyped(true); i + 1 < all.length ? setI(i + 1) : onDone(); };
+  const next = async () => {
+    if (saving) return;
+    if (!typed) return setTyped(true);
+    if (i + 1 < all.length) return setI(i + 1);
+    setSaving(true);
+    setSaveError(false);
+    try {
+      await onDone();
+    } catch {
+      setSaveError(true);
+    } finally {
+      setSaving(false);
+    }
+  };
   const pad = 6;
   const spot = rect ? { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
   const atTop = rect ? rect.top < 120 : false;
@@ -47,9 +62,15 @@ export function Tutorial({ onDone, name }: { onDone: () => void; name: string })
     <div className="tut-mask" onClick={next}>
       <div className="tut-spot" style={spot} />
       <div className="tut-crimson" style={crim}><Crimson size={rect ? cw : 120} talking={!typed} /></div>
-      <div className={`tut-dialog dialog ${atTop ? "" : "top"}`}>
+      <div className={`tut-dialog dialog motion-pop ${atTop ? "" : "top"}`}>
         <Typewriter key={i} text={step.text} skip={typed} onDone={() => setTyped(true)} />
-        {typed && <span className="next">▼</span>}
+        {saveError && <p className="error" role="alert">Couldn’t save tutorial progress. Try again.</p>}
+        <button type="button" className="btn" disabled={saving} style={{ display: "flex", margin: "12px 0 0 auto" }} onClick={(event) => {
+          event.stopPropagation();
+          void next();
+        }}>
+          {saving ? "SAVING…" : saveError ? "RETRY" : !typed ? "SHOW TEXT" : i + 1 < all.length ? "NEXT" : "FINISH"}
+        </button>
       </div>
     </div>
   );

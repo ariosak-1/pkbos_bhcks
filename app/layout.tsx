@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg", apple: "/icon-192.png" },
   appleWebApp: { capable: true, title: "Pokebos", statusBarStyle: "default" },
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fffaf3", viewportFit: "cover" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#E84637", viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

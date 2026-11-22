@@ -1,0 +1,82 @@
+@keyframes rise {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: none; }
+}
+@keyframes pop {
+  from { opacity: 0; scale: 0.94; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes slidein {
+  from { opacity: 0; translate: 24px 0; }
+  to { opacity: 1; translate: none; }
+}
+@keyframes reveal {
+  from { opacity: 0; scale: 0.9 1; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes confetti {
+  0% { opacity: 0; transform: none; }
+  18% { opacity: 1; }
+  55% { opacity: 1; transform: translate(var(--drift), -22px) rotate(100deg); }
+  100% { opacity: 0; transform: translate(calc(var(--drift) * 1.6), 52px) rotate(220deg); }
+}
+@keyframes blink { 50% { opacity: 0.55; } }
+@keyframes float { 50% { translate: 0 -4px; } }
+@keyframes wobble {
+  20% { rotate: -16deg; }
+  40% { rotate: 12deg; }
+  60% { rotate: -8deg; }
+  80% { rotate: 4deg; }
+}
+
+.motion-stagger > * { animation: rise 220ms var(--ease) backwards; }
+.motion-stagger > :nth-child(4n + 2) { animation-delay: 35ms; }
+.motion-stagger > :nth-child(4n + 3) { animation-delay: 70ms; }
+.motion-stagger > :nth-child(4n + 4) { animation-delay: 105ms; }
+.motion-pop { animation: pop 200ms var(--ease) backwards; }
+.motion-slide { animation: slidein 240ms var(--ease) backwards; }
+.motion-reveal { animation: reveal 260ms var(--ease) 50ms backwards; }
+
+:where(.btn, .chip, .choice, .like, .topbar .icon, .bottombar a, a.collectible, .mon) {
+  transition: transform 120ms var(--ease), box-shadow 120ms var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  :where(.btn, .chip, .choice, .like, .topbar .icon, .bottombar a, a.collectible, a.mon, button.mon):hover {
+    transform: translateY(-2px);
+  }
+}
+:is(.btn, .chip, .choice, .like, .topbar .icon, .bottombar a, a.collectible, a.mon, button.mon):active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.achievement-burst {
+  position: absolute;
+  inset: -10px 0 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.achievement-burst > i {
+  position: absolute;
+  top: 24px;
+  left: var(--origin);
+  width: 6px;
+  height: 10px;
+  background: var(--chip-color);
+  opacity: 0;
+  animation: confetti 550ms var(--ease) var(--delay, 0ms);
+}
+.achievement-burst > :nth-child(1) { --origin: 10%; --drift: 22px; --chip-color: var(--pink); }
+.achievement-burst > :nth-child(2) { --origin: 25%; --drift: -15px; --chip-color: var(--teal); --delay: 55ms; }
+.achievement-burst > :nth-child(3) { --origin: 40%; --drift: 32px; --chip-color: var(--red); }
+.achievement-burst > :nth-child(4) { --origin: 58%; --drift: -27px; --chip-color: var(--purple); --delay: 35ms; }
+.achievement-burst > :nth-child(5) { --origin: 73%; --drift: 18px; --chip-color: var(--acid); }
+.achievement-burst > :nth-child(6) { --origin: 88%; --drift: -13px; --chip-color: var(--teal); --delay: 65ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+  :where(.btn, .chip, .choice, .like, .topbar .icon, .bottombar a, a.collectible, .mon, .badge, .bigball):is(:hover, :active) {
+    transform: none !important;
+  }
+}

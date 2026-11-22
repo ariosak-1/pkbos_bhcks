@@ -26,8 +26,10 @@ export function PokeRow({ p, extra }: { p: any; extra?: React.ReactNode }) {
 
 export function PokeCard({ p }: { p: any }) {
   return (
-    <Link href={`/dex/${p.id}`} className="card">
-      <Sprite domain={p.domain} name={p.name} caught={p.level > 0} size={56} />
+    <Link href={`/dex/${p.id}`} className="card collectible" data-caught={p.level > 0} data-rarity={p.rarity}>
+      <div className="collectible-art">
+        <Sprite domain={p.domain} name={p.name} caught={p.level > 0} size={56} />
+      </div>
       <div className="name">{p.name}</div>
       <Stars rarity={p.rarity} />
     </Link>

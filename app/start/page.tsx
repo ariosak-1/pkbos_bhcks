@@ -1,10 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Crimson, Logo } from "@/components/Crimson";
 import { Typewriter } from "@/components/Typewriter";
 import { COLLEGES } from "@/lib/seed-data";
+import { useMe } from "@/components/AppShell";
 
 type Phase = "title" | "login" | "talk" | "name" | "kind" | "college" | "password" | "outro";
 
@@ -18,12 +19,17 @@ const INTRO = [
 
 export default function Start() {
   const router = useRouter();
+  const { me } = useMe();
   const [phase, setPhase] = useState<Phase>("title");
   const [line, setLine] = useState(0);
   const [typed, setTyped] = useState(false);
   const [form, setForm] = useState({ name: "", trainerType: "", college: "", password: "" });
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (me?.user && (phase === "title" || phase === "login")) router.replace("/");
+  }, [me, phase, router]);
 
   const advance = () => {
     if (!typed) return setTyped(true);
@@ -33,6 +39,7 @@ export default function Start() {
   };
 
   async function create() {
+    if (busy || form.password.length < 4) return;
     setBusy(true); setErr("");
     try {
       await api("/api/auth/signup", { method: "POST", json: form });
@@ -45,6 +52,7 @@ export default function Start() {
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true); setErr("");
     try { await api("/api/auth/login", { method: "POST", json: { name: form.name, password: form.password } }); router.replace("/"); }
     catch (e: any) { setErr(e.message); } finally { setBusy(false); }
@@ -58,14 +66,14 @@ export default function Start() {
         <div className="sub">BOSTON VERSION</div>
         {phase === "title" ? (
           <div className="menu">
-            <button className="choice" autoFocus onClick={() => setPhase("talk")}>NEW GAME</button>
-            <button className="choice" onClick={() => setPhase("login")}>CONTINUE</button>
+            <button className="choice" autoFocus onClick={() => { setErr(""); setPhase("talk"); }}>NEW GAME</button>
+            <button className="choice" onClick={() => { setErr(""); setPhase("login"); }}>CONTINUE</button>
           </div>
         ) : (
           <form className="menu" onSubmit={login}>
             <input className="field" placeholder="NAME" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
             <input className="field" placeholder="PASSWORD" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-            {err && <div className="error">{err}</div>}
+            {err && <div className="error" role="alert">{err}</div>}
             <button className="btn primary" disabled={busy}>CONTINUE</button>
             <button type="button" className="choice" onClick={() => setPhase("title")}>BACK</button>
           </form>
@@ -76,7 +84,14 @@ export default function Start() {
   const say = (text: string, onClick?: () => void) => (
     <div className="dialog" onClick={onClick}>
       <Typewriter key={text} text={text} skip={typed} onDone={() => setTyped(true)} />
-      {typed && onClick && <span className="next">▼</span>}
+      {onClick && (
+        <button type="button" className="btn" style={{ display: "flex", margin: "12px 0 0 auto" }} onClick={(event) => {
+          event.stopPropagation();
+          onClick();
+        }}>
+          {typed ? phase === "outro" ? "START GAME" : "NEXT" : "SHOW TEXT"}
+        </button>
+      )}
     </div>
   );
 
@@ -86,10 +101,19 @@ export default function Start() {
       {phase === "talk" && say(INTRO[line], advance)}
 
       {phase === "name" && (
-        <form onSubmit={(e) => { e.preventDefault(); if (form.name.trim().length >= 2) { setPhase("kind"); setErr(""); } }} className="grid">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (!/^[A-Z0-9 _.-]{2,12}$/.test(form.name.trim())) {
+            setErr("Use 2–12 letters, numbers, spaces, or _ . - in your name.");
+            return;
+          }
+          setTyped(false);
+          setPhase("kind");
+          setErr("");
+        }} className="grid">
           {say("First, what is your name?")}
           <input className="field" maxLength={12} autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value.toUpperCase() })} placeholder="NAME" />
-          {err && <div className="error">{err}</div>}
+          {err && <div className="error" role="alert">{err}</div>}
           <button className="btn primary">OK</button>
         </form>
       )}
@@ -116,7 +140,7 @@ export default function Start() {
         <form onSubmit={(e) => { e.preventDefault(); create(); }} className="grid">
           {say("Last thing. A secret word, so nobody steals your Dex.")}
           <input className="field" type="password" autoFocus value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="PASSWORD" />
-          {err && <div className="error">{err}</div>}
+          {err && <div className="error" role="alert">{err}</div>}
           <button className="btn primary" disabled={busy || form.password.length < 4}>OK</button>
         </form>
       )}

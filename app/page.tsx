@@ -39,7 +39,7 @@ export default function Home() {
       {rec?.nearby?.length > 0 && (<><h2>NEARBY</h2>{rec.nearby.slice(0, 3).map((p: any) => <PokeRow key={p.id} p={p} />)}</>)}
 
       <h2>{rec?.hasAffinity ? "FOR YOU" : "FILL YOUR DEX"}</h2>
-      <div className="scroller">{rec?.forYou?.map((p: any) => <PokeCard key={p.id} p={p} />)}</div>
+      <div className="scroller motion-stagger">{rec?.forYou?.map((p: any) => <PokeCard key={p.id} p={p} />)}</div>
 
       <h2>LEGENDARY SIGHTINGS</h2>
       {rec?.events?.slice(0, 4).map((p: any) => (

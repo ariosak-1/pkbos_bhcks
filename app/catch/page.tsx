@@ -75,8 +75,13 @@ function Catch() {
 
       {res?.status === "caught" && (
         <>
-          <img src={preview!} className="preview" alt="" />
-          <div className="dialog" style={{ width: "100%" }}>
+          <img src={preview!} className="preview motion-reveal" alt="" />
+          <div className="dialog achievement motion-pop" role="status" style={{ width: "100%" }}>
+            {(res.first || res.badges.length > 0 || res.huntsCompleted.length > 0 || res.newAbilities.length > 0) && (
+              <span className="achievement-burst" aria-hidden="true">
+                <i /><i /><i /><i /><i /><i />
+              </span>
+            )}
             {res.first ? `Gotcha! ${res.pokebos.name.toUpperCase()} was caught!` : `${res.pokebos.name.toUpperCase()} grew to Lv ${res.level}!`}
             <br />+{res.points} PTS
             {res.newAbilities.map((a) => <div key={a}>Unlocked ability {a.toUpperCase()}!</div>)}
