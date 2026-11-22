@@ -30,7 +30,7 @@ export const POST = handle(async (req: Request) => {
   const lng = exif?.longitude ?? (Number(form.get("lng")) || null);
 
   // --- Candidates: near the photo's location, in season on the day it was taken ---
-  const all = await sql<any>("SELECT id, name, blurb, lat, lng, types, rarity, points, season_from, season_to FROM pokebos");
+  const all = await sql<any>("SELECT id, name, blurb, lat, lng, types, rarity, points, season_from, season_to FROM pokebos WHERE active");
   const seasonal = all.filter((p) => inSeason(p.season_from, p.season_to, when));
   const ranked = lat && lng
     ? seasonal.map((p) => ({ ...p, dist: haversine(lat, lng, p.lat, p.lng) })).filter((p) => p.dist < 1500).sort((a, b) => a.dist - b.dist)

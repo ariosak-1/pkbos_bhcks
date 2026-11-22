@@ -69,6 +69,9 @@ CREATE TABLE IF NOT EXISTS user_hunts (user_id INT NOT NULL REFERENCES users(id)
 CREATE TABLE IF NOT EXISTS user_badges (user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE, badge_id TEXT NOT NULL, chain_sig TEXT, earned_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (user_id, badge_id));
 CREATE TABLE IF NOT EXISTS location_pings (user_id INT NOT NULL, ts TIMESTAMPTZ NOT NULL DEFAULT now(), lat DOUBLE PRECISION NOT NULL, lng DOUBLE PRECISION NOT NULL, speed_kmh REAL, on_transit BOOLEAN NOT NULL DEFAULT FALSE, meters REAL NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS location_pings_user_ts ON location_pings (user_id, ts DESC);
+ALTER TABLE pokebos ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE pokebos ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 `;
 
 async function connect(): Promise<Q> {
@@ -98,7 +101,7 @@ async function connect(): Promise<Q> {
 }
 
 async function seed(q: Q) {
-  const { rows } = await q.query<{ n: number }>("SELECT count(*)::int AS n FROM pokebos WHERE source <> 'places'");
+  const { rows } = await q.query<{ n: number }>("SELECT count(*)::int AS n FROM pokebos WHERE source IN ('curated','event')");
   if (rows[0].n >= SEED.length) return;
   let dex = 1;
   for (const p of SEED) {

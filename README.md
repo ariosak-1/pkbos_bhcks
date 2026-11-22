@@ -34,6 +34,18 @@ With no keys, the app uses embedded Postgres (PGlite) in `./data`, stores photos
 - **Points**: catch by rarity (10/25/60/150), level-up +5, ability +15, like +1, hunt bonus. Leaderboards only count earned points (spending on gift cards never lowers rank) and reset monthly.
 - **Data**: everything user-generated lives in our Postgres; photos in object storage (key only in the DB). Third-party APIs are read-only inputs.
 
+## Auto-filling the dex
+
+Nobody adds pokebos by hand. `lib/sync.ts` runs when the server starts and then every 24h:
+
+- pulls real places within 400m of every T stop from OpenStreetMap (free, no key): restaurants, cafes, museums, campuses, stadiums, offices
+- picks ~10 per stop with a mix of types, skips chain spam, types/rarity/abilities come from OSM tags (cuisine, sport, wikipedia...)
+- logos come from each place's website tag (favicon)
+- red sox + bruins home games (public MLB/NHL schedules) show up as one-day event pokebos
+- closed places drop off after 30 days unless someone caught them
+
+Force a run: `curl localhost:3000/api/cron/sync?force`. On Vercel, `vercel.json` hits it daily (set `CRON_SECRET`). Set `DISABLE_SYNC=1` to turn it off. Google Places (`npm run seed:places`) is still there for richer data like reviews.
+
 ## Anti-cheat (later)
 
 Already in: photos older than 3 days are rejected, event windows are checked against EXIF dates, with AI on abilities must be visible in the photo, photos without metadata or that the AI couldn't confirm are flagged out of the feed, likes can't be undone or self-given.

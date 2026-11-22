@@ -19,7 +19,7 @@ export const GET = handle(async (req: Request) => {
           OR EXISTS (SELECT 1 FROM abilities a WHERE a.pokebos_id=p.id AND (a.name ILIKE '%'||t||'%' OR a.type ILIKE '%'||t||'%' OR a.hint ILIKE '%'||t||'%')))::int
        + (SELECT count(*) FROM unnest($2::text[]) t WHERE t = ANY(p.types))::int AS score,
        ARRAY(SELECT a.name FROM abilities a WHERE a.pokebos_id=p.id AND EXISTS (SELECT 1 FROM unnest($1::text[]) t WHERE a.name ILIKE '%'||t||'%' OR a.type ILIKE '%'||t||'%' OR a.hint ILIKE '%'||t||'%')) AS matched
-     FROM pokebos p ORDER BY score DESC, p.dex_no LIMIT 10`, [terms, types, u?.id ?? -1]);
+     FROM pokebos p WHERE p.active ORDER BY score DESC, p.dex_no LIMIT 10`, [terms, types, u?.id ?? -1]);
   const lat = Number(sp.get("lat")), lng = Number(sp.get("lng"));
   const results = rows.filter((r) => r.score > 0).map((r) => ({
     ...r,

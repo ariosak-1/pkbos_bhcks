@@ -22,7 +22,7 @@ export const POST = handle(async (req: Request) => {
   if (onTransit) await syncBadges(u.id);
   const pk = await sql<any>(
     `SELECT p.id, p.name, p.lat, p.lng, p.domain, p.season_from, p.season_to FROM pokebos p
-     WHERE NOT EXISTS (SELECT 1 FROM catches c WHERE c.pokebos_id=p.id AND c.user_id=$1)`, [u.id]);
+     WHERE p.active AND NOT EXISTS (SELECT 1 FROM catches c WHERE c.pokebos_id=p.id AND c.user_id=$1)`, [u.id]);
   const nearby = pk
     .filter((p) => inSeason(p.season_from, p.season_to))
     .map((p) => ({ id: p.id, name: p.name, domain: p.domain, dist: Math.round(haversine(lat, lng, p.lat, p.lng)) }))
