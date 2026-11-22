@@ -76,7 +76,7 @@ export const POST = handle(async (req: Request) => {
   const key = await putPhoto(buf, type);
   const [photo] = await sql<{ id: number }>(
     "INSERT INTO photos (user_id, pokebos_id, storage_key, content_type, taken_at, lat, lng, ai_confidence, flagged) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
-    [user.id, chosen.id, key, type, takenAt, lat, lng, confidence, (!takenAt && !lat) || (!!confirmId && aiEnabled())] // review queue: no metadata, or AI couldn't confirm
+    [user.id, chosen.id, key, type, takenAt, lat, lng, confidence, !!confirmId && aiEnabled()] // review queue: AI couldn't confirm it. no-metadata photos still show (anti-cheat later)
   );
   await sql("INSERT INTO catches (user_id, pokebos_id, photo_id, caught_on) VALUES ($1,$2,$3,$4)", [user.id, chosen.id, photo.id, day]);
   const level = (await sql<{ n: number }>("SELECT count(*)::int AS n FROM catches WHERE user_id=$1 AND pokebos_id=$2", [user.id, chosen.id]))[0].n;

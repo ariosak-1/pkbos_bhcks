@@ -10,5 +10,5 @@ export const GET = handle(async (req: Request) => {
        EXISTS (SELECT 1 FROM likes l WHERE l.photo_id=ph.id AND l.user_id=$1) AS liked,
        (ph.user_id = $1) AS mine
      FROM photos ph JOIN users u ON u.id=ph.user_id JOIN pokebos p ON p.id=ph.pokebos_id
-     WHERE ph.id < $2 AND NOT ph.flagged ORDER BY ph.id DESC LIMIT 30`, [u?.id ?? -1, before]);
+     WHERE ph.id < $2 AND (NOT ph.flagged OR ph.user_id = $1) ORDER BY ph.id DESC LIMIT 30`, [u?.id ?? -1, before]);
 });
