@@ -1,57 +1,23 @@
 # Pokebos
 
-Catch Boston on the T. Places are Pokebos, the MBTA is the map, a photo is a Pokeball. maybeee we shld make it another thing tho lowk
+**Turn your next T stop into a side quest.**
 
-## Run it
+## Why we built it
 
-```bash
-npm install
-cp .env.example .env.local   # every key is optional
-npm run dev                  # http://localhost:3000
-```
+As college students and new Boston residents, we learned the city one T stop at a time. At first, the station names were just names on a map. As our commutes became familiar, it got easier to ride past entire neighborhoods without wondering what was upstairs.
 
-With no keys, the app uses embedded Postgres (PGlite) in `./data`, stores photos in `./data/uploads`, uses MBTA public rate limits, and matches catches by GPS. The map shows subway lines and stops, and a CARTO Basemaps key enables the street background.
+Our hackathon challenge asked how we could make a T ride something people look forward to. We built Pokebos to give riders a reason to look a little closer, whether they’re learning Boston for the first time or taking the same train they take every day.
 
-## Keys
+The idea is simple. Open the map while you’re waiting for a train and see what’s around a stop you usually pass. Maybe there’s a café worth coming back for after class, or a landmark you can show a friend who’s new to the city. Each discovery gives that station name a place and a memory to go with it.
 
-| Env var | Unlocks |
-|---|---|
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini (via Mastra): photo → Pokebos matching, abilities seen in photos, smarter search, Prof. Crimson chat |
-| `MBTA_API_KEY` | Higher MBTA V3 rate limits (live shapes + predictions) |
-| `NEXT_PUBLIC_CARTO_BASEMAP_API_KEY` | CARTO Voyager background tiles on the map. The browser sends this key with tile requests. |
-| `DATABASE_URL` | Real Postgres. Point it at TigerData and `location_pings` becomes a Timescale hypertable |
-| `GOOGLE_PLACES_API_KEY` | `npm run seed:places` bulk import of establishments near T stops |
-| `SOLANA_SECRET_KEY` | Every point award and badge is mirrored to Solana devnet as a memo tx |
-| `S3_*` | Photos in S3-compatible object storage instead of local disk |
+## How to play
 
-## How it fits together
+- **Explore the T map.** Tap a station to see real places nearby and plan a trip.
+- **Build your Boston Dex.** Photograph cafés, landmarks, and other discoveries to collect them and earn points.
+- **Beat the T.** Pick how much time you have and get a short route of nearby places to catch before your timer runs out.
 
-- **Next.js 16** app router. Pages in `app/`, API in `app/api/`.
-- **Boston Dex**: hand-curated places + seasonal events in `lib/seed-data.ts` (Harvard–Yale, Head of the Charles, Marathon...). Events can only be caught with a photo taken inside their window. `scripts/import-places.ts` pulls everything else from Google Places and types it automatically; abilities come from repeated terms in reviews (Gemini, or keyword frequency offline).
-- **Map**: MBTA V3 shapes, with a bundled stop snapshot (`lib/mbta-snapshot.ts`) as offline fallback. Pokebos within 750m of a stop show in its side panel.
-- **T routes**: Dijkstra over the subway graph (`lib/mbta.ts`) with transfer penalties, plus live MBTA predictions for each boarding.
-- **Catching** (`app/api/catch`): EXIF date + GPS → candidates near the photo → Gemini picks one (or the closest within 120m without AI, or the trainer picks). Same Pokebos same day = "Oops! Looks like you already caught X today." Repeat catches on new days level it up.
-- **Points**: catch by rarity (10/25/60/150), level-up +5, ability +15, like +1, hunt bonus. Leaderboards only count earned points (spending on gift cards never lowers rank) and reset monthly.
-- **Data**: everything user-generated lives in our Postgres; photos in object storage (key only in the DB). Third-party APIs are read-only inputs.
+Professor Crimson guides you through the game and can wear your school’s colors. The pixel art and collectible cards bring the feel of a handheld game to the city we’re getting to know.
 
-## Auto-filling the dex
+## What you collect
 
-Nobody adds pokebos by hand. `lib/sync.ts` runs when the server starts and then every 24h:
-
-- pulls real places within 400m of every T stop from OpenStreetMap (free, no key): restaurants, cafes, museums, campuses, stadiums, offices
-- picks ~10 per stop with a mix of types, skips chain spam, types/rarity/abilities come from OSM tags (cuisine, sport, wikipedia...)
-- logos come from each place's website tag (favicon)
-- red sox + bruins home games (public MLB/NHL schedules) show up as one-day event pokebos
-- closed places drop off after 30 days unless someone caught them
-
-Force a run: `curl localhost:3000/api/cron/sync?force`. On Vercel, `vercel.json` hits it daily (set `CRON_SECRET`). Set `DISABLE_SYNC=1` to turn it off. Google Places (`npm run seed:places`) is still there for richer data like reviews.
-
-## Anti-cheat (later)
-
-Already in: photos older than 3 days are rejected, event windows are checked against EXIF dates, with AI on abilities must be visible in the photo, photos without metadata or that the AI couldn't confirm are flagged out of the feed, likes can't be undone or self-given.
-
-Next: perceptual-hash duplicate photos across users, EXIF GPS vs device GPS mismatch, rate limits per trainer, review queue for flagged photos, server-signed upload timestamps.
-
-## Swapping art
-
-Professor Crimson is a placeholder pixel sprite in `components/Crimson.tsx`. Drop final animations into `public/crimson/` and swap the component.
+Your Boston Dex becomes a record of the places you’ve actually visited. Photograph a place for your first catch, then return on another day to level it up. You can share your catches in the feed and see what other riders have found around the city.
