@@ -10,14 +10,14 @@ function Fit({ lines }: { lines: Line[] }) {
   const map = useMap();
   useEffect(() => {
     const pts = lines.flatMap((l) => l.stops.map((s) => [s.lat, s.lng] as [number, number]));
-    if (pts.length) map.fitBounds(pts, { padding: [24, 24] });
+    if (pts.length) map.flyToBounds(pts, { padding: [24, 24], duration: 0.8 });
   }, [lines, map]);
   return null;
 }
 
 export default function MapView({ lines, stops, selected, onSelect, me }: { lines: Line[]; stops: Stop[]; selected: string | null; onSelect: (id: string) => void; me: { lat: number; lng: number } | null }) {
   return (
-    <MapContainer center={[42.355, -71.07]} zoom={12} style={{ height: "100%", width: "100%" }} zoomControl={false} attributionControl={true}>
+    <MapContainer center={[42.355, -71.07]} zoom={12} style={{ height: "100%", width: "100%" }} zoomControl={false} attributionControl={true} zoomAnimation fadeAnimation markerZoomAnimation>
       {cartoKey && (
         <TileLayer
           url={`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(cartoKey)}`}
@@ -26,14 +26,14 @@ export default function MapView({ lines, stops, selected, onSelect, me }: { line
       )}
       <Fit lines={lines} />
       {lines.map((l) => l.paths.map((p, i) => (
-        <Polyline key={`${l.id}-${i}`} positions={p} pathOptions={{ color: "#181818", weight: 9, opacity: 1, lineCap: "square" }} />
+        <Polyline key={`${l.id}-${i}`} positions={p} pathOptions={{ color: "#ffffff", weight: 10, opacity: 0.9, lineCap: "round", lineJoin: "round" }} />
       )))}
       {lines.map((l) => l.paths.map((p, i) => (
-        <Polyline key={`${l.id}-c-${i}`} positions={p} pathOptions={{ color: l.color, weight: 5, opacity: 1, lineCap: "square" }} />
+        <Polyline key={`${l.id}-c-${i}`} positions={p} pathOptions={{ color: l.color, weight: 5, opacity: 0.95, lineCap: "round", lineJoin: "round" }} />
       )))}
       {stops.map((s) => (
         <CircleMarker key={s.id} center={[s.lat, s.lng]} radius={s.id === selected ? 9 : s.count ? 6 : 4}
-          pathOptions={{ color: "#181818", weight: 3, fillColor: s.id === selected ? "#ffd54a" : s.count && s.caught === s.count ? s.color : "#fff", fillOpacity: 1 }}
+          pathOptions={{ color: "#2e2a3a", weight: 2.5, fillColor: s.id === selected ? "#ffd54a" : s.count && s.caught === s.count ? s.color : "#fff", fillOpacity: 1 }}
           eventHandlers={{ click: () => onSelect(s.id) }}>
           <Tooltip className="stop-tip" direction="top" offset={[0, -6]}>
             {s.name.toUpperCase()}{s.count ? ` · ${s.caught}/${s.count}` : ""}
