@@ -71,7 +71,7 @@ export async function userStats(userId: number) {
     "SELECT count(DISTINCT pokebos_id)::int AS caught, count(DISTINCT pokebos_id) FILTER (WHERE p.rarity='legendary')::int AS legendary FROM catches c JOIN pokebos p ON p.id=c.pokebos_id WHERE c.user_id=$1", [userId]);
   const [m] = await sql<{ m: number }>("SELECT COALESCE(sum(meters) FILTER (WHERE on_transit),0)::float AS m FROM location_pings WHERE user_id=$1", [userId]);
   const [h] = await sql<{ n: number }>("SELECT count(*)::int AS n FROM user_hunts WHERE user_id=$1 AND completed_at IS NOT NULL", [userId]);
-  const [total] = await sql<{ n: number }>("SELECT count(*)::int AS n FROM pokebos");
+  const [total] = await sql<{ n: number }>("SELECT count(*)::int AS n FROM pokebos WHERE active");
   const types = Object.fromEntries(typeRows.map((r) => [r.t, r.n]));
   const s: BadgeStats = { caught: c.caught, legendary: c.legendary, types, tMiles: +(m.m / 1609.34).toFixed(1), hunts: h.n };
   return { ...s, earned: pts.earned, balance: pts.earned - pts.spent, dexTotal: total.n };

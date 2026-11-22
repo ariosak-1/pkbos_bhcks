@@ -14,7 +14,7 @@ export const GET = handle(async (req: Request) => {
   }
   const all = await sql<any>(
     `SELECT p.id, p.dex_no, p.name, p.types, p.rarity, p.points, p.lat, p.lng, p.domain, p.is_event, p.season_from, p.season_to,
-       (SELECT count(*) FROM catches c WHERE c.pokebos_id=p.id AND c.user_id=$1)::int AS level FROM pokebos p`, [u?.id ?? -1]);
+       (SELECT count(*) FROM catches c WHERE c.pokebos_id=p.id AND c.user_id=$1)::int AS level FROM pokebos p WHERE p.active`, [u?.id ?? -1]);
   const affinity: Record<string, number> = {};
   for (const p of all) if (p.level) for (const t of p.types) affinity[t] = (affinity[t] || 0) + 1 + p.level * 0.2;
   const open = all.filter((p) => !p.level && inSeason(p.season_from, p.season_to));
