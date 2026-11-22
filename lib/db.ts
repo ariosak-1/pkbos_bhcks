@@ -102,7 +102,11 @@ async function connect(): Promise<Q> {
   let q: Q;
   if (process.env.DATABASE_URL) {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_URL.includes("sslmode=disable") ? false : { rejectUnauthorized: false } });
+    // sslmode in the url makes pg verify the cert chain (fails on tiger's), so we drop it and set ssl ourselves
+    const url = new URL(process.env.DATABASE_URL);
+    const noSsl = url.searchParams.get("sslmode") === "disable";
+    for (const k of ["sslmode", "uselibpqcompat"]) url.searchParams.delete(k);
+    const pool = new Pool({ connectionString: url.toString(), ssl: noSsl ? false : { rejectUnauthorized: false } });
     q = { kind: "pg", query: (s, p) => pool.query(s, p) as any, exec: (s) => pool.query(s) };
   } else {
     const { PGlite } = await import("@electric-sql/pglite");
