@@ -150,8 +150,8 @@ export async function syncPlaces() {
 
 // ---- events from public sports schedules ----
 const VENUES = {
-  fenway: { lat: 42.3467, lng: -71.0972, domain: "mlb.com" },
-  garden: { lat: 42.3662, lng: -71.0621, domain: "nhl.com" },
+  fenway: { lat: 42.3467, lng: -71.0972, domain: "redsox.com" },
+  garden: { lat: 42.3662, lng: -71.0621, domain: "nhl.com/bruins" },
 };
 
 async function upsertEvent(key: string, name: string, date: string, types: string[], rarity: Rarity, v: { lat: number; lng: number; domain: string }, blurb: string, abilities: [string, string, string][]) {

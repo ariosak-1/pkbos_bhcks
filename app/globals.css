@@ -102,8 +102,7 @@ main { flex: 1; padding: 18px 16px 120px; }
 /* ---------- sprites, types ---------- */
 .spritebox { position: relative; display: inline-grid; place-items: center; flex-shrink: 0; }
 .sprite { display: block; border-radius: 22%; object-fit: contain; transition: filter 0.4s, opacity 0.4s; }
-.spritebox.unknown .sprite { filter: grayscale(1) blur(2px) brightness(1.15); opacity: 0.35; }
-.spritebox .q { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--px); color: var(--ink); opacity: 0.55; pointer-events: none; }
+.spritebox.unknown .sprite { filter: grayscale(1) contrast(0.7) brightness(1.05); opacity: 0.5; }
 .sprite-fallback { display: grid; place-items: center; background: linear-gradient(150deg, #d86a7f, var(--crimson)); color: #fff; font-family: var(--px); }
 .types { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .type { font-family: var(--px); font-size: 7px; text-transform: uppercase; color: #fff; padding: 5px 8px; border-radius: 999px; }
