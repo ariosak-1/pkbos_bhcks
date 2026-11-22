@@ -100,10 +100,11 @@ main { flex: 1; padding: 18px 16px 120px; }
 .bar > i { display: block; height: 100%; background: linear-gradient(90deg, #6fd49a, var(--green)); border-radius: 999px; transition: width 0.8s var(--ease); }
 
 /* ---------- sprites, types ---------- */
-.sprite { image-rendering: pixelated; display: block; flex-shrink: 0; border-radius: 8px; transition: filter 0.4s, opacity 0.4s; }
-.sprite.silhouette { filter: brightness(0); opacity: 0.22; }
-.sprite-fallback { display: grid; place-items: center; background: var(--crimson); color: #fff; font-family: var(--px); border-radius: 10px; }
-.sprite-fallback.silhouette { background: #000; color: #000; }
+.spritebox { position: relative; display: inline-grid; place-items: center; flex-shrink: 0; }
+.sprite { display: block; border-radius: 22%; object-fit: contain; transition: filter 0.4s, opacity 0.4s; }
+.spritebox.unknown .sprite { filter: grayscale(1) blur(2px) brightness(1.15); opacity: 0.35; }
+.spritebox .q { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--px); color: var(--ink); opacity: 0.55; pointer-events: none; }
+.sprite-fallback { display: grid; place-items: center; background: linear-gradient(150deg, #d86a7f, var(--crimson)); color: #fff; font-family: var(--px); }
 .types { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .type { font-family: var(--px); font-size: 7px; text-transform: uppercase; color: #fff; padding: 5px 8px; border-radius: 999px; }
 .type-historic { background: #c4566b; } .type-restaurant { background: #ec9256; } .type-cafe { background: #a07856; } .type-sports { background: #5b8de6; } .type-career { background: #4fae7a; }

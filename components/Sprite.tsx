@@ -1,15 +1,17 @@
 "use client";
 import { useState } from "react";
 
-// Pokebos sprite = the business favicon, pixelated. Uncaught = black silhouette.
+// sprite = the place's favicon. not caught yet = blurred + grey with a ? on top
 export function Sprite({ domain, name, caught, size = 48 }: { domain?: string | null; name: string; caught: boolean; size?: number }) {
   const [broken, setBroken] = useState(false);
-  const cls = `sprite ${caught ? "" : "silhouette"}`;
-  if (!domain || broken)
-    return <div className={`${cls} sprite-fallback`} style={{ width: size, height: size, fontSize: size * 0.5 }}>{name[0]}</div>;
+  const inner = !domain || broken
+    ? <div className="sprite sprite-fallback" style={{ width: size, height: size, fontSize: size * 0.45 }}>{name[0]}</div>
+    : <img className="sprite" width={size} height={size} alt={caught ? name : "???"} src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`} onError={() => setBroken(true)} />;
   return (
-    <img className={cls} width={size} height={size} alt={caught ? name : "???"}
-      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} onError={() => setBroken(true)} />
+    <span className={`spritebox ${caught ? "" : "unknown"}`} style={{ width: size, height: size }}>
+      {inner}
+      {!caught && <span className="q" style={{ fontSize: Math.max(10, size * 0.35) }}>?</span>}
+    </span>
   );
 }
 
