@@ -71,14 +71,6 @@ export const REWARDS = [
   { id: "legal-25", name: "Legal Sea Foods $25", domain: "legalseafoods.com", cost: 2000 },
 ];
 
-export const HUNTS = [
-  { id: "red-line-scholar", name: "Red Line Scholar", line: "Red", bonus: 150, pokebos: ["harvard-yard", "mit-dome", "boston-common", "jfk-library"] },
-  { id: "freedom-trail", name: "Freedom Trail Quest", line: "Orange", bonus: 200, pokebos: ["boston-common", "state-house", "faneuil-hall", "old-north", "uss-constitution"] },
-  { id: "north-end-feast", name: "North End Feast", line: "Green-E", bonus: 120, pokebos: ["neptune-oyster", "regina", "mikes-pastry", "caffe-vittoria"] },
-  { id: "fenway-culture", name: "Fenway Culture Crawl", line: "Green-E", bonus: 150, pokebos: ["fenway-park", "mfa", "gardner", "el-pelon"] },
-  { id: "kendall-career", name: "Kendall Career Run", line: "Red", bonus: 100, pokebos: ["cic", "google-cambridge", "mit-dome"] },
-];
-
 export const COLLEGES = ["Harvard", "MIT", "BU", "BC", "Northeastern", "Tufts", "Emerson", "Suffolk", "UMass Boston", "Berklee", "Simmons", "Wentworth", "Other"];
 
 export type Badge = { id: string; name: string; color: string; test: (s: BadgeStats) => boolean };

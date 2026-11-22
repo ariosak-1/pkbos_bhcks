@@ -3,7 +3,7 @@ import { useState } from "react";
 
 // sprite = the place's favicon. not caught yet = same logo with a grey tint
 // google hands back a 16px globe when a site has no icon, treat that as "no logo" and show a letter
-const src = (d: string) =>
+export const spriteSrc = (d: string) =>
   d.includes("/")
     ? `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent("https://" + d)}&sz=128`
     : `https://www.google.com/s2/favicons?domain=${d}&sz=128`;
@@ -15,7 +15,7 @@ export function Sprite({ domain, name, caught, size = 48 }: { domain?: string | 
       {!domain || broken ? (
         <div className="sprite sprite-fallback" style={{ width: size, height: size, fontSize: size * 0.45 }}>{name[0]}</div>
       ) : (
-        <img className="sprite" width={size} height={size} alt={caught ? name : "???"} src={src(domain)}
+        <img className="sprite" width={size} height={size} alt={caught ? name : "???"} src={spriteSrc(domain)}
           onLoad={(e) => e.currentTarget.naturalWidth <= 16 && setBroken(true)} onError={() => setBroken(true)} />
       )}
     </span>

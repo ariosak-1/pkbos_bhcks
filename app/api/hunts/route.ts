@@ -1,17 +1,44 @@
 import { sql } from "@/lib/db";
-import { handle, currentUser } from "@/lib/server";
+import { handle, requireUser, HttpError } from "@/lib/server";
+import { planRoute, haversine } from "@/lib/mbta";
+import { huntOffers, activeHunt, huntBonus, hasRide, MIN_HUNT_M } from "@/lib/hunts";
 
-export const GET = handle(async () => {
-  const u = await currentUser();
-  const hunts = await sql<any>(
-    `SELECT h.*, uh.started_at, uh.completed_at FROM hunts h LEFT JOIN user_hunts uh ON uh.hunt_id=h.id AND uh.user_id=$1 ORDER BY h.bonus`, [u?.id ?? -1]);
-  const pk = await sql<any>("SELECT id, name, domain, lat, lng, types FROM pokebos");
-  const out = [];
-  for (const h of hunts) {
-    const caught = h.started_at
-      ? (await sql<{ pokebos_id: string }>("SELECT DISTINCT pokebos_id FROM catches WHERE user_id=$1 AND pokebos_id = ANY($2) AND created_at >= $3", [u!.id, h.pokebos_ids, h.started_at])).map((r) => r.pokebos_id)
-      : [];
-    out.push({ ...h, stops: h.pokebos_ids.map((id: string) => ({ ...pk.find((p) => p.id === id), caught: caught.includes(id) })) });
-  }
-  return out;
+// GET ?lat&lng -> your current hunt + a few places worth riding to
+export const GET = handle(async (req: Request) => {
+  const u = await requireUser();
+  const q = new URL(req.url).searchParams;
+  const lat = Number(q.get("lat")), lng = Number(q.get("lng"));
+  const [done] = await sql<{ n: number; pts: number }>(
+    "SELECT count(*)::int AS n, COALESCE(sum(bonus),0)::int AS pts FROM hunt_trips WHERE user_id=$1 AND completed_at IS NOT NULL", [u.id]);
+  const active = await activeHunt(u.id);
+  const offers = lat && lng ? (await huntOffers(u.id, lat, lng, 5)).filter((o) => o.target.id !== active?.target.id).slice(0, 4) : [];
+  return {
+    active,
+    offers,
+    needLocation: !(lat && lng),
+    completed: done.n,
+    earned: done.pts,
+  };
+});
+
+// POST { to, lat, lng } -> start a hunt (replaces any hunt you're on)
+export const POST = handle(async (req: Request) => {
+  const u = await requireUser();
+  const { to, lat, lng } = await req.json();
+  if (!lat || !lng) throw new HttpError(400, "Turn on location so we know where you're starting from.");
+  const [p] = await sql<any>("SELECT id, name, lat, lng, points FROM pokebos WHERE id=$1 AND active", [to]);
+  if (!p) throw new HttpError(404, "No such Pokebos");
+  if (haversine(lat, lng, p.lat, p.lng) < MIN_HUNT_M) throw new HttpError(400, `${p.name} is walking distance. Just go catch it!`);
+  const plan = planRoute({ lat, lng }, { lat: p.lat, lng: p.lng, name: p.name });
+  if (!hasRide(plan)) throw new HttpError(400, `${p.name} is walking distance. Just go catch it!`);
+  await sql("UPDATE hunt_trips SET gave_up_at=now() WHERE user_id=$1 AND completed_at IS NULL AND gave_up_at IS NULL", [u.id]);
+  await sql("INSERT INTO hunt_trips (user_id, pokebos_id, from_lat, from_lng, bonus, plan) VALUES ($1,$2,$3,$4,$5,$6)",
+    [u.id, p.id, lat, lng, huntBonus(plan, p.points), JSON.stringify(plan)]);
+  return { active: await activeHunt(u.id) };
+});
+
+export const DELETE = handle(async () => {
+  const u = await requireUser();
+  await sql("UPDATE hunt_trips SET gave_up_at=now() WHERE user_id=$1 AND completed_at IS NULL AND gave_up_at IS NULL", [u.id]);
+  return { ok: true };
 });

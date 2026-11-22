@@ -1,4 +1,4 @@
-import { SEED, REWARDS, HUNTS, RARITY_POINTS } from "./seed-data";
+import { SEED, REWARDS, RARITY_POINTS } from "./seed-data";
 
 // One query interface over either real Postgres (DATABASE_URL, e.g. TigerData/Timescale)
 // or embedded PGlite (zero-setup local dev, stored in ./data/pglite).
@@ -64,8 +64,20 @@ CREATE TABLE IF NOT EXISTS points_ledger (id SERIAL PRIMARY KEY, user_id INT NOT
 CREATE INDEX IF NOT EXISTS points_ledger_time ON points_ledger (created_at);
 CREATE TABLE IF NOT EXISTS rewards (id TEXT PRIMARY KEY, name TEXT NOT NULL, domain TEXT, cost INT NOT NULL);
 CREATE TABLE IF NOT EXISTS redemptions (id SERIAL PRIMARY KEY, user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE, reward_id TEXT NOT NULL REFERENCES rewards(id), points INT NOT NULL, code TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
-CREATE TABLE IF NOT EXISTS hunts (id TEXT PRIMARY KEY, name TEXT NOT NULL, line TEXT, bonus INT NOT NULL, pokebos_ids TEXT[] NOT NULL);
-CREATE TABLE IF NOT EXISTS user_hunts (user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE, hunt_id TEXT NOT NULL REFERENCES hunts(id), started_at TIMESTAMPTZ NOT NULL DEFAULT now(), completed_at TIMESTAMPTZ, PRIMARY KEY (user_id, hunt_id));
+CREATE TABLE IF NOT EXISTS hunt_trips (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  pokebos_id TEXT NOT NULL REFERENCES pokebos(id),
+  from_lat DOUBLE PRECISION NOT NULL, from_lng DOUBLE PRECISION NOT NULL,
+  bonus INT NOT NULL,
+  plan JSONB NOT NULL,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  gave_up_at TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS comments (id SERIAL PRIMARY KEY, photo_id INT NOT NULL REFERENCES photos(id) ON DELETE CASCADE, user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE, body TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS comments_photo ON comments (photo_id, id);
+CREATE INDEX IF NOT EXISTS hunt_trips_user ON hunt_trips (user_id, started_at DESC);
 CREATE TABLE IF NOT EXISTS user_badges (user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE, badge_id TEXT NOT NULL, chain_sig TEXT, earned_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (user_id, badge_id));
 CREATE TABLE IF NOT EXISTS location_pings (user_id INT NOT NULL, ts TIMESTAMPTZ NOT NULL DEFAULT now(), lat DOUBLE PRECISION NOT NULL, lng DOUBLE PRECISION NOT NULL, speed_kmh REAL, on_transit BOOLEAN NOT NULL DEFAULT FALSE, meters REAL NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS location_pings_user_ts ON location_pings (user_id, ts DESC);
@@ -118,7 +130,6 @@ async function seed(q: Q) {
       await q.query("INSERT INTO abilities (pokebos_id, name, type, hint) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING", [p.id, name, type, hint]);
   }
   for (const r of REWARDS) await q.query("INSERT INTO rewards VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING", [r.id, r.name, r.domain, r.cost]);
-  for (const h of HUNTS) await q.query("INSERT INTO hunts VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING", [h.id, h.name, h.line, h.bonus, h.pokebos]);
 }
 
 export function db(): Promise<Q> {

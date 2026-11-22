@@ -132,20 +132,15 @@ export const POST = handle(async (req: Request) => {
     }
   }
 
-  // --- Hunts ---
+  // --- Hunt: you rode out here for this one ---
   const huntsCompleted: string[] = [];
-  const hunts = await sql<any>(
-    `SELECT h.*, uh.started_at FROM user_hunts uh JOIN hunts h ON h.id=uh.hunt_id
-     WHERE uh.user_id=$1 AND uh.completed_at IS NULL AND $2 = ANY(h.pokebos_ids)`, [user.id, chosen.id]);
-  for (const h of hunts) {
-    const got = await sql<{ n: number }>(
-      "SELECT count(DISTINCT pokebos_id)::int AS n FROM catches WHERE user_id=$1 AND pokebos_id = ANY($2) AND created_at >= $3", [user.id, h.pokebos_ids, h.started_at]);
-    if (got[0].n >= h.pokebos_ids.length) {
-      await sql("UPDATE user_hunts SET completed_at=now() WHERE user_id=$1 AND hunt_id=$2", [user.id, h.id]);
-      await award(user.id, h.bonus, "hunt", h.id);
-      points += h.bonus;
-      huntsCompleted.push(h.name);
-    }
+  const [trip] = await sql<any>(
+    "SELECT id, bonus FROM hunt_trips WHERE user_id=$1 AND pokebos_id=$2 AND completed_at IS NULL AND gave_up_at IS NULL", [user.id, chosen.id]);
+  if (trip) {
+    await sql("UPDATE hunt_trips SET completed_at=now() WHERE id=$1", [trip.id]);
+    await award(user.id, trip.bonus, "hunt", String(trip.id));
+    points += trip.bonus;
+    huntsCompleted.push(chosen.name);
   }
 
   const badges = await syncBadges(user.id);

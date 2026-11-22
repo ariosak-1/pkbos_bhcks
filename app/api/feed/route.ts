@@ -8,7 +8,10 @@ export const GET = handle(async (req: Request) => {
     `SELECT ph.id, ph.uploaded_at, ph.taken_at, u.name AS trainer, u.trainer_type, u.college, p.id AS pokebos_id, p.name AS pokebos, p.domain, p.types,
        (SELECT count(*) FROM likes l WHERE l.photo_id=ph.id)::int AS likes,
        EXISTS (SELECT 1 FROM likes l WHERE l.photo_id=ph.id AND l.user_id=$1) AS liked,
-       (ph.user_id = $1) AS mine
+       (ph.user_id = $1) AS mine,
+       (SELECT count(*) FROM comments c WHERE c.photo_id=ph.id)::int AS comment_count,
+       COALESCE((SELECT json_agg(x ORDER BY x.id) FROM (SELECT c.id, c.body, cu.name AS trainer FROM comments c JOIN users cu ON cu.id=c.user_id
+         WHERE c.photo_id=ph.id ORDER BY c.id DESC LIMIT 2) x), '[]') AS comments
      FROM photos ph JOIN users u ON u.id=ph.user_id JOIN pokebos p ON p.id=ph.pokebos_id
      WHERE ph.id < $2 AND (NOT ph.flagged OR ph.user_id = $1) ORDER BY ph.id DESC LIMIT 30`, [u?.id ?? -1, before]);
 });

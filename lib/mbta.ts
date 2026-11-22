@@ -129,10 +129,13 @@ function terminal(route: string, dir: 0 | 1, alightAt: string) {
 }
 
 export type Leg =
-  | { kind: "walk"; meters: number; mins: number; to: string }
-  | { kind: "ride"; route: string; line: string; color: string; from: string; fromId: string; to: string; toId: string; toward: string; stops: number; mins: number; dir: 0 | 1; nextDepartures?: string[] };
+  | { kind: "walk"; meters: number; mins: number; to: string; path: LatLng[] }
+  | { kind: "ride"; route: string; line: string; color: string; from: string; fromId: string; to: string; toId: string; toward: string; stops: number; mins: number; dir: 0 | 1; nextDepartures?: string[]; path: LatLng[] };
+type LatLng = [number, number];
+export type Plan = { totalMins: number; legs: Leg[]; from: LatLng; to: LatLng };
 
-export function planRoute(from: { lat: number; lng: number }, to: { lat: number; lng: number; name?: string }) {
+export function planRoute(from: { lat: number; lng: number }, to: { lat: number; lng: number; name?: string }): Plan {
+  const A: LatLng = [from.lat, from.lng], B: LatLng = [to.lat, to.lng];
   graph ??= buildGraph();
   const stopInfo = new Map(allStops().map((s) => [s.id, s]));
   const walkDirect = haversine(from.lat, from.lng, to.lat, to.lng);
@@ -168,7 +171,7 @@ export function planRoute(from: { lat: number; lng: number }, to: { lat: number;
   }
 
   if (!best || walkDirect / WALK_M_PER_MIN <= best.cost) {
-    return { totalMins: Math.round(walkDirect / WALK_M_PER_MIN), legs: [{ kind: "walk", meters: Math.round(walkDirect), mins: Math.round(walkDirect / WALK_M_PER_MIN), to: to.name || "destination" }] as Leg[] };
+    return { from: A, to: B, totalMins: Math.round(walkDirect / WALK_M_PER_MIN), legs: [{ kind: "walk", meters: Math.round(walkDirect), mins: Math.round(walkDirect / WALK_M_PER_MIN), to: to.name || "destination", path: [A, B] }] };
   }
 
   // reconstruct
@@ -181,21 +184,22 @@ export function planRoute(from: { lat: number; lng: number }, to: { lat: number;
   }
   const firstStop = cur.split("|")[0];
   const legs: Leg[] = [];
+  const ll = (id: string): LatLng => [stopInfo.get(id)!.lat, stopInfo.get(id)!.lng];
   const startWalk = haversine(from.lat, from.lng, stopInfo.get(firstStop)!.lat, stopInfo.get(firstStop)!.lng);
-  legs.push({ kind: "walk", meters: Math.round(startWalk), mins: Math.round(startWalk / WALK_M_PER_MIN), to: stopInfo.get(firstStop)!.name });
+  legs.push({ kind: "walk", meters: Math.round(startWalk), mins: Math.round(startWalk / WALK_M_PER_MIN), to: stopInfo.get(firstStop)!.name, path: [A, ll(firstStop)] });
   for (const { from: f, e } of edges) {
     const last = legs[legs.length - 1];
     if (last.kind === "ride" && last.route === e.route && last.dir === e.dir) {
-      last.stops++; last.mins += e.mins; last.to = stopInfo.get(e.to)!.name; last.toId = e.to;
+      last.stops++; last.mins += e.mins; last.to = stopInfo.get(e.to)!.name; last.toId = e.to; last.path.push(ll(e.to));
     } else {
-      legs.push({ kind: "ride", route: e.route, line: LINES[e.route].name, color: LINES[e.route].color, from: stopInfo.get(f)!.name, fromId: f, to: stopInfo.get(e.to)!.name, toId: e.to, toward: "", stops: 1, mins: e.mins, dir: e.dir });
+      legs.push({ kind: "ride", route: e.route, line: LINES[e.route].name, color: LINES[e.route].color, from: stopInfo.get(f)!.name, fromId: f, to: stopInfo.get(e.to)!.name, toId: e.to, toward: "", stops: 1, mins: e.mins, dir: e.dir, path: [ll(f), ll(e.to)] });
     }
   }
   for (const l of legs) if (l.kind === "ride") { l.toward = terminal(l.route, l.dir, l.toId); l.mins = Math.round(l.mins); }
   const lastStop = stopInfo.get(best.state.split("|")[0])!;
   const endWalk = haversine(lastStop.lat, lastStop.lng, to.lat, to.lng);
-  legs.push({ kind: "walk", meters: Math.round(endWalk), mins: Math.round(endWalk / WALK_M_PER_MIN), to: to.name || "destination" });
-  return { totalMins: Math.round(best.cost), legs };
+  legs.push({ kind: "walk", meters: Math.round(endWalk), mins: Math.round(endWalk / WALK_M_PER_MIN), to: to.name || "destination", path: [ll(lastStop.id), B] });
+  return { from: A, to: B, totalMins: Math.round(best.cost), legs };
 }
 
 export async function addLivePredictions(legs: Leg[]) {
